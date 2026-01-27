@@ -15,6 +15,8 @@ import { protectSuperAdmin } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
+router.get('/dashboard/stats', getDashboardStats); 
+
 // Todas las rutas requieren autenticación de super admin
 router.use(protectSuperAdmin);
 
@@ -33,6 +35,6 @@ router.put('/:id/permisos', updatePermisos);
 router.put('/:id/sedes', updateSedes);
 router.put('/:id/cambiar-password', cambiarPasswordAdmin);
 router.put('/:id/reactivar', reactivarAdmin);
-router.get('/dashboard/stats', getDashboardStats); 
+
 
 export default router;
