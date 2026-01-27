@@ -33,6 +33,6 @@ router.put('/:id/permisos', updatePermisos);
 router.put('/:id/sedes', updateSedes);
 router.put('/:id/cambiar-password', cambiarPasswordAdmin);
 router.put('/:id/reactivar', reactivarAdmin);
-router.get('/dashboard/stats', protectSuperAdmin, getDashboardStats); 
+router.get('/dashboard/stats', getDashboardStats); 
 
 export default router;
