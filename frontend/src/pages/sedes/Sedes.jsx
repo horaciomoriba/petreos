@@ -1,0 +1,310 @@
+import { useState, useEffect } from 'react';
+import { sedeService } from '../../services/sedeService';
+import { showToast } from '../../utils/toast';
+import SedeModal from '../../components/sedes/SedeModal';
+import ConfirmModal from '../../components/common/ConfirmModal';
+
+const Sedes = () => {
+  const [sedes, setSedes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [selectedSede, setSelectedSede] = useState(null);
+  const [sedeToDelete, setSedeToDelete] = useState(null);
+
+  // Cargar sedes al montar el componente
+  useEffect(() => {
+    loadSedes();
+  }, []);
+
+  const loadSedes = async () => {
+    try {
+      setLoading(true);
+      const response = await sedeService.getAll();
+      setSedes(response.data);
+    } catch (error) {
+      showToast.error(error.response?.data?.message || 'Error al cargar sedes');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Filtrar sedes por búsqueda
+  const filteredSedes = sedes.filter(sede =>
+    sede.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    sede.ubicacion.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Abrir modal para crear
+  const handleCreate = () => {
+    setSelectedSede(null);
+    setShowModal(true);
+  };
+
+  // Abrir modal para editar
+  const handleEdit = (sede) => {
+    setSelectedSede(sede);
+    setShowModal(true);
+  };
+
+  // Guardar sede (crear o actualizar)
+  const handleSave = async (formData) => {
+    try {
+      if (selectedSede) {
+        // Actualizar
+        await sedeService.update(selectedSede._id, formData);
+        showToast.success('Sede actualizada correctamente');
+      } else {
+        // Crear
+        await sedeService.create(formData);
+        showToast.success('Sede creada correctamente');
+      }
+      setShowModal(false);
+      loadSedes();
+    } catch (error) {
+      showToast.error(error.response?.data?.message || 'Error al guardar sede');
+    }
+  };
+
+  // Confirmar eliminación
+  const handleDeleteClick = (sede) => {
+    setSedeToDelete(sede);
+    setShowConfirmModal(true);
+  };
+
+  // Eliminar sede
+  const handleDelete = async () => {
+    try {
+      await sedeService.delete(sedeToDelete._id);
+      showToast.success('Sede eliminada correctamente');
+      loadSedes();
+    } catch (error) {
+      showToast.error(error.response?.data?.message || 'Error al eliminar sede');
+    }
+  };
+
+  // Toggle activo/inactivo
+  const handleToggleActive = async (sede) => {
+    try {
+      await sedeService.update(sede._id, { activo: !sede.activo });
+      showToast.success(`Sede ${sede.activo ? 'desactivada' : 'activada'} correctamente`);
+      loadSedes();
+    } catch (error) {
+      showToast.error(error.response?.data?.message || 'Error al actualizar sede');
+    }
+  };
+
+  return (
+    <div className="p-4 lg:p-8">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-primary-900 mb-2">Gestión de Sedes</h1>
+        <p className="text-sm text-primary-600">Administra las sedes de la empresa</p>
+      </div>
+
+      {/* Actions Bar */}
+      <div className="bg-white rounded-xl border border-primary-200 p-4 mb-6">
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+          {/* Search */}
+          <div className="relative flex-1 w-full sm:max-w-xs">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              placeholder="Buscar sedes..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="input pl-10"
+            />
+          </div>
+
+          {/* Create Button */}
+          <button
+            onClick={handleCreate}
+            className="btn-primary flex items-center gap-2 w-full sm:w-auto"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Nueva Sede
+          </button>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="bg-white rounded-xl border border-primary-200 overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="spinner h-8 w-8"></div>
+          </div>
+        ) : filteredSedes.length === 0 ? (
+          <div className="text-center py-12">
+            <svg className="mx-auto h-12 w-12 text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+            <h3 className="mt-2 text-sm font-medium text-primary-900">No hay sedes</h3>
+            <p className="mt-1 text-sm text-primary-500">
+              {searchTerm ? 'No se encontraron sedes con ese criterio' : 'Comienza creando una nueva sede'}
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Ubicación</th>
+                    <th>Dirección</th>
+                    <th>Contacto</th>
+                    <th>Estado</th>
+                    <th className="text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredSedes.map((sede) => (
+                    <tr key={sede._id}>
+                      <td>
+                        <div className="font-semibold text-primary-900">{sede.nombre}</div>
+                      </td>
+                      <td>
+                        <div className="flex items-center gap-2 text-primary-700">
+                          <svg className="w-4 h-4 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          {sede.ubicacion}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="text-sm text-primary-600">
+                          {sede.direccion || '-'}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="text-sm text-primary-600">
+                          {sede.telefono && <div>{sede.telefono}</div>}
+                          {sede.email && <div className="text-xs">{sede.email}</div>}
+                          {!sede.telefono && !sede.email && '-'}
+                        </div>
+                      </td>
+                      <td>
+                        <button
+                          onClick={() => handleToggleActive(sede)}
+                          className={`badge-${sede.activo ? 'primary' : 'secondary'} cursor-pointer hover:opacity-80`}
+                        >
+                          {sede.activo ? 'Activa' : 'Inactiva'}
+                        </button>
+                      </td>
+                      <td>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleEdit(sede)}
+                            className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                            title="Editar"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(sede)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Eliminar"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden divide-y divide-primary-200">
+              {filteredSedes.map((sede) => (
+                <div key={sede._id} className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-primary-900">{sede.nombre}</h3>
+                      <p className="text-sm text-primary-600 mt-1 flex items-center gap-1">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        {sede.ubicacion}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleToggleActive(sede)}
+                      className={`badge-${sede.activo ? 'primary' : 'secondary'} cursor-pointer`}
+                    >
+                      {sede.activo ? 'Activa' : 'Inactiva'}
+                    </button>
+                  </div>
+                  
+                  {(sede.direccion || sede.telefono || sede.email) && (
+                    <div className="mb-3 text-sm text-primary-600 space-y-1">
+                      {sede.direccion && <div>{sede.direccion}</div>}
+                      {sede.telefono && <div>{sede.telefono}</div>}
+                      {sede.email && <div className="text-xs">{sede.email}</div>}
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEdit(sede)}
+                      className="btn-secondary btn-sm flex-1 flex items-center justify-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      Editar
+                    </button>
+                    <button
+                      onClick={() => handleDeleteClick(sede)}
+                      className="btn-outline btn-sm flex items-center justify-center gap-2 text-red-600 border-red-200 hover:bg-red-50"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Eliminar
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Modals */}
+      <SedeModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onSave={handleSave}
+        sede={selectedSede}
+      />
+
+      <ConfirmModal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={handleDelete}
+        title="¿Eliminar sede?"
+        message={`¿Estás seguro de que deseas eliminar la sede "${sedeToDelete?.nombre}"? Esta acción se puede revertir reactivándola.`}
+        type="danger"
+      />
+    </div>
+  );
+};
+
+export default Sedes;
