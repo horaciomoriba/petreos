@@ -1,6 +1,3 @@
-// src/pages/vehiculos/Vehiculos.jsx
-// Rediseñado con agrupación por tipo de vehículo y formato de tabla
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import vehiculoService from '../../services/vehiculoService';
@@ -11,13 +8,14 @@ const Vehiculos = () => {
   const [vehiculos, setVehiculos] = useState([]);
   const [pagination, setPagination] = useState({});
   const [loading, setLoading] = useState(true);
+  const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [filtros, setFiltros] = useState({
     busqueda: '',
     tipo_vehiculo: '',
     disponibilidad: '',
     sede: '',
     page: 1,
-    limit: 100 // Aumentado para mostrar más vehículos
+    limit: 100
   });
 
   useEffect(() => {
@@ -54,6 +52,17 @@ const Vehiculos = () => {
     setTimeout(() => loadVehiculos(), 0);
   };
 
+  // Contar filtros activos (excluyendo búsqueda)
+  const contarFiltrosActivos = () => {
+    let count = 0;
+    if (filtros.tipo_vehiculo) count++;
+    if (filtros.disponibilidad) count++;
+    if (filtros.sede) count++;
+    return count;
+  };
+
+  const filtrosActivos = contarFiltrosActivos();
+
   // Agrupar vehículos por tipo
   const vehiculosPorTipo = vehiculos.reduce((acc, vehiculo) => {
     const tipo = vehiculo.tipo_vehiculo;
@@ -64,7 +73,6 @@ const Vehiculos = () => {
     return acc;
   }, {});
 
-  // Nombres amigables para cada tipo
   const tiposVehiculo = {
     olla_revolvedora: 'Ollas Revolvedoras',
     planta_de_concreto: 'Plantas de Concreto',
@@ -73,7 +81,6 @@ const Vehiculos = () => {
     grua: 'Grúas'
   };
 
-  // Badge de disponibilidad
   const getDisponibilidadBadge = (disponibilidad) => {
     const badges = {
       disponible: 'text-green-700 bg-green-50 border border-green-200',
@@ -95,169 +102,211 @@ const Vehiculos = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Vehículos</h1>
-        <p className="text-sm text-gray-600 mt-1">Gestión de vehículos de la flota</p>
+      <div className="mb-4">
+        <h1 className="text-xl font-bold text-gray-900">Vehículos</h1>
+        <p className="text-xs text-gray-600 mt-0.5">Gestión de vehículos de la flota</p>
       </div>
 
-      {/* Filtros */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6 shadow-sm">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-          {/* Búsqueda */}
-          <div className="lg:col-span-2">
-            <label className="block text-xs font-medium text-gray-700 mb-1.5">
-              Buscar vehículo
-            </label>
-            <input
-              type="text"
-              placeholder="Placa, número económico, marca..."
-              value={filtros.busqueda}
-              onChange={(e) => setFiltros({ ...filtros, busqueda: e.target.value })}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg 
-                focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent
-                transition-all"
-              onKeyPress={(e) => e.key === 'Enter' && handleFiltrar()}
-            />
-          </div>
+      {/* Barra de búsqueda y acciones compacta */}
+      <div className="bg-white rounded-lg border border-gray-200 mb-4 overflow-hidden">
+        {/* Primera fila: Búsqueda y acciones principales */}
+        <div className="p-3">
+          <div className="flex items-center gap-2">
+            {/* Input de búsqueda */}
+            <div className="flex-1">
+              <div className="relative">
+                <svg 
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Buscar placa, no. económico..."
+                  value={filtros.busqueda}
+                  onChange={(e) => setFiltros({ ...filtros, busqueda: e.target.value })}
+                  className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg 
+                    focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                  onKeyPress={(e) => e.key === 'Enter' && handleFiltrar()}
+                />
+              </div>
+            </div>
 
-          {/* Tipo de Vehículo */}
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1.5">
-              Tipo
-            </label>
-            <select
-              value={filtros.tipo_vehiculo}
-              onChange={(e) => setFiltros({ ...filtros, tipo_vehiculo: e.target.value })}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg
-                focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent
-                transition-all"
+            {/* Botón Filtros con indicador */}
+            <button
+              onClick={() => setMostrarFiltros(!mostrarFiltros)}
+              className="relative px-3 py-2 text-sm font-medium text-gray-700 
+                bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200
+                flex items-center gap-1.5"
             >
-              <option value="">Todos</option>
-              <option value="olla_revolvedora">Olla Revolvedora</option>
-              <option value="planta_de_concreto">Planta de Concreto</option>
-              <option value="camion_carga_frontal">Camión de Carga Frontal</option>
-              <option value="camioneta_pickup">Camioneta Pickup</option>
-              <option value="grua">Grúa</option>
-            </select>
-          </div>
-
-          {/* Disponibilidad */}
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1.5">
-              Estado
-            </label>
-            <select
-              value={filtros.disponibilidad}
-              onChange={(e) => setFiltros({ ...filtros, disponibilidad: e.target.value })}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg
-                focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent
-                transition-all"
-            >
-              <option value="">Todos</option>
-              <option value="disponible">Disponible</option>
-              <option value="en_servicio">En Servicio</option>
-              <option value="mantenimiento">Mantenimiento</option>
-              <option value="fuera_servicio">Fuera de Servicio</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Botones de Acción */}
-        <div className="flex flex-wrap items-center gap-2">
-          <button 
-            onClick={handleFiltrar} 
-            className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 
-              bg-gray-50 hover:bg-gray-100 rounded-lg transition-all border border-gray-200"
-          >
-            Aplicar Filtros
-          </button>
-          <button 
-            onClick={handleLimpiarFiltros} 
-            className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 
-              transition-colors"
-          >
-            Limpiar
-          </button>
-          <div className="ml-auto flex gap-2">
-            <button 
-              onClick={() => navigate('/combustible')}
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 
-                bg-gray-50 hover:bg-gray-100 rounded-lg transition-all border border-gray-200"
-            >
-              Ver Combustible
+              <svg 
+                className={`w-4 h-4 transition-transform ${mostrarFiltros ? 'rotate-180' : ''}`} 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor" 
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              <span className="hidden sm:inline">Filtros</span>
+              {filtrosActivos > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-gray-900 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                  {filtrosActivos}
+                </span>
+              )}
             </button>
+
+            {/* Botón Buscar */}
+            <button 
+              onClick={handleFiltrar}
+              className="px-4 py-2 text-sm font-semibold text-white bg-gray-900 hover:bg-gray-800 
+                rounded-lg transition-colors"
+            >
+              <span className="hidden sm:inline">Buscar</span>
+              <svg className="w-4 h-4 sm:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
+
+            {/* Botón Nuevo (Desktop) */}
             <button 
               onClick={() => navigate('/vehiculos/nuevo')}
-              className="px-5 py-2.5 text-sm font-semibold text-white 
-                bg-gradient-to-r from-gray-900 to-gray-700 
-                hover:from-gray-800 hover:to-gray-600 
-                rounded-lg transition-all shadow-sm hover:shadow-md"
+              className="hidden sm:flex items-center gap-1.5 px-4 py-2 text-sm font-semibold 
+                text-white bg-gray-900 hover:bg-gray-800 rounded-lg transition-colors"
             >
-              Nuevo Vehículo
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              Nuevo
             </button>
           </div>
         </div>
+
+        {/* Sección de filtros colapsable */}
+        <div 
+          className={`border-t border-gray-100 transition-all duration-300 ease-in-out ${
+            mostrarFiltros ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
+          }`}
+        >
+          <div className="p-3 bg-gray-50">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Tipo de Vehículo */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                  Tipo de Vehículo
+                </label>
+                <select
+                  value={filtros.tipo_vehiculo}
+                  onChange={(e) => setFiltros({ ...filtros, tipo_vehiculo: e.target.value })}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white
+                    focus:outline-none focus:ring-2 focus:ring-gray-900"
+                >
+                  <option value="">Todos los tipos</option>
+                  <option value="olla_revolvedora">Olla Revolvedora</option>
+                  <option value="planta_de_concreto">Planta de Concreto</option>
+                  <option value="camion_carga_frontal">Camión Carga Frontal</option>
+                  <option value="camioneta_pickup">Camioneta Pickup</option>
+                  <option value="grua">Grúa</option>
+                </select>
+              </div>
+
+              {/* Estado */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                  Estado
+                </label>
+                <select
+                  value={filtros.disponibilidad}
+                  onChange={(e) => setFiltros({ ...filtros, disponibilidad: e.target.value })}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white
+                    focus:outline-none focus:ring-2 focus:ring-gray-900"
+                >
+                  <option value="">Todos los estados</option>
+                  <option value="disponible">Disponible</option>
+                  <option value="en_servicio">En Servicio</option>
+                  <option value="mantenimiento">Mantenimiento</option>
+                  <option value="fuera_servicio">Fuera de Servicio</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Acciones de filtros */}
+            {filtrosActivos > 0 && (
+              <div className="mt-3 pt-3 border-t border-gray-200 flex items-center justify-between">
+                <span className="text-xs text-gray-600">
+                  {filtrosActivos} filtro{filtrosActivos !== 1 ? 's' : ''} activo{filtrosActivos !== 1 ? 's' : ''}
+                </span>
+                <button
+                  onClick={handleLimpiarFiltros}
+                  className="text-xs font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                  Limpiar filtros
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
+
+      {/* Botón flotante "Nuevo" en mobile */}
+      <button
+        onClick={() => navigate('/vehiculos/nuevo')}
+        className="sm:hidden fixed bottom-6 right-4 w-14 h-14 bg-gray-900 hover:bg-gray-800 
+          text-white rounded-full shadow-lg flex items-center justify-center z-30
+          transition-all active:scale-95"
+      >
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+        </svg>
+      </button>
 
       {/* Loading State */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-16">
+        <div className="flex flex-col items-center justify-center py-12">
           <div className="relative">
-            <div className="w-12 h-12 border-4 border-gray-100 rounded-full"></div>
-            <div className="w-12 h-12 border-4 border-gray-900 border-t-transparent rounded-full animate-spin absolute top-0"></div>
+            <div className="w-10 h-10 border-3 border-gray-100 rounded-full"></div>
+            <div className="w-10 h-10 border-3 border-gray-900 border-t-transparent rounded-full animate-spin absolute top-0"></div>
           </div>
-          <p className="text-sm font-medium text-gray-600 mt-4">Cargando vehículos</p>
+          <p className="text-sm text-gray-600 mt-3">Cargando vehículos...</p>
         </div>
       ) : vehiculos.length === 0 ? (
         /* Empty State */
-        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-          <div className="w-14 h-14 mx-auto mb-4 bg-gray-50 rounded-xl flex items-center justify-center">
-            <svg className="w-7 h-7 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+          <div className="w-12 h-12 mx-auto mb-3 bg-gray-50 rounded-lg flex items-center justify-center">
+            <svg className="w-6 h-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1-1V4a1 1 0 011-1h2a1 1 0 011 1v3m0 0a1 1 0 001 1h2a1 1 0 001-1V4a1 1 0 00-1-1h-2a1 1 0 00-1 1v3z" />
             </svg>
           </div>
           <p className="text-sm font-medium text-gray-500 mb-1">
-            {filtros.busqueda || filtros.tipo_vehiculo || filtros.disponibilidad
+            {filtros.busqueda || filtrosActivos > 0
               ? 'No se encontraron vehículos'
               : 'Sin vehículos registrados'}
           </p>
-          <p className="text-xs text-gray-400 mb-4">
-            {filtros.busqueda || filtros.tipo_vehiculo || filtros.disponibilidad
-              ? 'Intenta ajustar los filtros de búsqueda'
-              : 'Agrega tu primer vehículo para comenzar'}
+          <p className="text-xs text-gray-400">
+            {filtros.busqueda || filtrosActivos > 0
+              ? 'Intenta ajustar los filtros'
+              : 'Agrega tu primer vehículo'}
           </p>
-          {!filtros.busqueda && !filtros.tipo_vehiculo && !filtros.disponibilidad && (
-            <button
-              onClick={() => navigate('/vehiculos/nuevo')}
-              className="px-5 py-2.5 text-sm font-semibold text-white 
-                bg-gradient-to-r from-gray-900 to-gray-700 
-                hover:from-gray-800 hover:to-gray-600 
-                rounded-lg transition-all shadow-sm hover:shadow-md"
-            >
-              Agregar Vehículo
-            </button>
-          )}
         </div>
       ) : (
         /* Vehículos agrupados por tipo */
-        <div className="space-y-8">
+        <div className="space-y-4">
           {Object.entries(vehiculosPorTipo).map(([tipo, vehiculosDelTipo]) => (
-            <div key={tipo} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div key={tipo} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
               {/* Header de cada grupo */}
-              <div className="px-5 py-4 border-b border-gray-200 bg-gray-50">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-base font-semibold text-gray-900">
-                      {tiposVehiculo[tipo] || tipo}
-                    </h2>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {vehiculosDelTipo.length} vehículo{vehiculosDelTipo.length !== 1 ? 's' : ''}
-                    </p>
-                  </div>
-                </div>
+              <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                <h2 className="text-sm font-semibold text-gray-900">
+                  {tiposVehiculo[tipo] || tipo}
+                  <span className="ml-2 text-xs font-normal text-gray-500">
+                    ({vehiculosDelTipo.length})
+                  </span>
+                </h2>
               </div>
 
               {/* Tabla responsive */}
@@ -265,25 +314,25 @@ const Vehiculos = () => {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-200">
-                      <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 bg-gray-50">
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-50">
                         Placa
                       </th>
-                      <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 bg-gray-50">
-                        No. Económico
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-50">
+                        No. Econ
                       </th>
-                      <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 bg-gray-50">
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-50 hidden sm:table-cell">
                         Marca/Modelo
                       </th>
-                      <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 bg-gray-50">
-                        Kilometraje
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-50 hidden md:table-cell">
+                        Km
                       </th>
-                      <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 bg-gray-50">
-                        Horas Motor
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-50 hidden lg:table-cell">
+                        Hrs Motor
                       </th>
-                      <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 bg-gray-50">
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-50">
                         Estado
                       </th>
-                      <th className="px-5 py-3 text-left text-xs font-semibold text-gray-700 bg-gray-50">
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-50 hidden lg:table-cell">
                         Operador
                       </th>
                     </tr>
@@ -293,46 +342,46 @@ const Vehiculos = () => {
                       <tr
                         key={vehiculo._id}
                         onClick={() => navigate(`/vehiculos/${vehiculo._id}`)}
-                        className="group hover:bg-gray-50 transition-colors cursor-pointer"
+                        className="hover:bg-gray-50 transition-colors cursor-pointer"
                       >
                         {/* Placa */}
-                        <td className="px-5 py-4">
-                          <div className="text-sm font-semibold text-gray-900 group-hover:text-gray-700 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="text-sm font-semibold text-gray-900">
                             {vehiculo.placa}
                           </div>
                           {vehiculo.year && (
-                            <div className="text-xs text-gray-500 mt-0.5">
+                            <div className="text-xs text-gray-500">
                               {vehiculo.year}
                             </div>
                           )}
                         </td>
 
                         {/* No. Económico */}
-                        <td className="px-5 py-4">
+                        <td className="px-4 py-3">
                           <span className="text-sm font-medium text-gray-700">
                             #{vehiculo.numero_economico}
                           </span>
                         </td>
 
                         {/* Marca/Modelo */}
-                        <td className="px-5 py-4">
+                        <td className="px-4 py-3 hidden sm:table-cell">
                           <div className="text-sm text-gray-900">
                             {vehiculo.marca}
                           </div>
-                          <div className="text-xs text-gray-500 mt-0.5">
+                          <div className="text-xs text-gray-500">
                             {vehiculo.modelo}
                           </div>
                         </td>
 
                         {/* Kilometraje */}
-                        <td className="px-5 py-4">
+                        <td className="px-4 py-3 hidden md:table-cell">
                           <span className="text-sm text-gray-700">
                             {vehiculo.kilometraje_actual?.toLocaleString() || 0} km
                           </span>
                         </td>
 
                         {/* Horas Motor */}
-                        <td className="px-5 py-4">
+                        <td className="px-4 py-3 hidden lg:table-cell">
                           <span className="text-sm text-gray-700">
                             {vehiculo.horas_motor_actual > 0 
                               ? `${vehiculo.horas_motor_actual?.toLocaleString()} hrs`
@@ -342,27 +391,20 @@ const Vehiculos = () => {
                         </td>
 
                         {/* Estado */}
-                        <td className="px-5 py-4">
+                        <td className="px-4 py-3">
                           <span className={`px-2 py-0.5 text-xs font-semibold rounded ${getDisponibilidadBadge(vehiculo.disponibilidad)}`}>
-                            {getDisponibilidadTexto(vehiculo.disponibilidad)}
+                            {getDisponibilidadTexto(vehiculo.disponibilidad).split(' ')[0]}
                           </span>
                         </td>
 
                         {/* Operador */}
-                        <td className="px-5 py-4">
+                        <td className="px-4 py-3 hidden lg:table-cell">
                           {vehiculo.operador_actual ? (
-                            <div>
-                              <div className="text-sm text-gray-900">
-                                {vehiculo.operador_actual.nombre}
-                              </div>
-                              {vehiculo.sede_actual && (
-                                <div className="text-xs text-gray-500 mt-0.5">
-                                  {vehiculo.sede_actual.nombre}
-                                </div>
-                              )}
+                            <div className="text-sm text-gray-900 truncate max-w-[150px]">
+                              {vehiculo.operador_actual.nombre}
                             </div>
                           ) : (
-                            <span className="text-sm text-gray-400">Sin asignar</span>
+                            <span className="text-sm text-gray-400">—</span>
                           )}
                         </td>
                       </tr>
@@ -377,9 +419,9 @@ const Vehiculos = () => {
 
       {/* Resumen total */}
       {!loading && vehiculos.length > 0 && (
-        <div className="mt-6">
+        <div className="mt-4">
           <p className="text-xs text-gray-500 text-center">
-            Total: {vehiculos.length} vehículo{vehiculos.length !== 1 ? 's' : ''} · 
+            {vehiculos.length} vehículo{vehiculos.length !== 1 ? 's' : ''} · 
             {' '}{Object.keys(vehiculosPorTipo).length} tipo{Object.keys(vehiculosPorTipo).length !== 1 ? 's' : ''}
           </p>
         </div>
