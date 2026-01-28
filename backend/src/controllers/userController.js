@@ -1,6 +1,7 @@
 import User from '../models/user.js';
 import Vehiculo from '../models/vehiculo.js';
 import bcrypt from 'bcryptjs';
+import registrarActividad from '../utils/activityLogger.js'; // ⭐ NUEVO IMPORT
 
 // ==========================================
 // CRUD OPERADORES (Admin)
@@ -155,6 +156,14 @@ export const createOperador = async (req, res) => {
         operador_actual: operador._id
       });
     }
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'crear_operador',
+      'admin',
+      req.admin.nombre,
+      `Creó operador ${nombre}`
+    );
     
     // Obtener operador creado con populate
     const operadorCreado = await User.findById(operador._id)
@@ -218,6 +227,14 @@ export const updateOperador = async (req, res) => {
     }
     
     await operador.save();
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'actualizar_operador',
+      'admin',
+      req.admin.nombre,
+      `Actualizó datos del operador ${operador.nombre}`
+    );
     
     const operadorActualizado = await User.findById(operador._id)
       .populate('sedeActual', 'nombre ciudad')
@@ -258,6 +275,8 @@ export const asignarVehiculo = async (req, res) => {
       });
     }
     
+    let vehiculoPlaca = null; // Para el registro de actividad
+    
     // 1. Si el operador ya tenía un vehículo asignado, quitarle la relación
     if (operador.vehiculoAsignado) {
       await Vehiculo.findByIdAndUpdate(operador.vehiculoAsignado, {
@@ -275,6 +294,8 @@ export const asignarVehiculo = async (req, res) => {
           msg: 'Vehículo no encontrado' 
         });
       }
+
+      vehiculoPlaca = vehiculo.placa; // Guardar para la actividad
       
       // 3. Si el vehículo ya tenía un operador asignado, quitarle la relación
       if (vehiculo.operador_actual) {
@@ -305,10 +326,26 @@ export const asignarVehiculo = async (req, res) => {
       await Vehiculo.findByIdAndUpdate(vehiculoId, {
         operador_actual: operador._id
       });
+
+      // ⭐ REGISTRAR ACTIVIDAD - ASIGNACIÓN
+      await registrarActividad(
+        'actualizar_operador',
+        'admin',
+        req.admin.nombre,
+        `Asignó vehículo ${vehiculoPlaca} al operador ${operador.nombre}`
+      );
     } else {
       // 7. Si vehiculoId es null, solo desasignar
       operador.vehiculoAsignado = null;
       await operador.save();
+
+      // ⭐ REGISTRAR ACTIVIDAD - DESASIGNACIÓN
+      await registrarActividad(
+        'actualizar_operador',
+        'admin',
+        req.admin.nombre,
+        `Removió vehículo asignado del operador ${operador.nombre}`
+      );
     }
     
     const operadorActualizado = await User.findById(operador._id)
@@ -359,6 +396,14 @@ export const deleteOperador = async (req, res) => {
     operador.activo = false;
     operador.vehiculoAsignado = null;
     await operador.save();
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'eliminar_operador',
+      'admin',
+      req.admin.nombre,
+      `Desactivó operador ${operador.nombre}`
+    );
     
     res.json({
       success: true,
@@ -404,6 +449,14 @@ export const cambiarPasswordOperador = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     operador.password = await bcrypt.hash(nuevaPassword, salt);
     await operador.save();
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'actualizar_operador',
+      'admin',
+      req.admin.nombre,
+      `Cambió contraseña del operador ${operador.nombre}`
+    );
     
     res.json({
       success: true,

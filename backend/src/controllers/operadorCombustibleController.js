@@ -2,6 +2,7 @@
 
 import CargaCombustible from '../models/cargacombustible.js';
 import Vehiculo from '../models/vehiculo.js';
+import registrarActividad from '../utils/activityLogger.js'; // ⭐ NUEVO IMPORT
 
 // @desc    Registrar nueva carga de combustible (OPERADOR)
 // @route   POST /api/operador/combustible
@@ -88,6 +89,14 @@ export const registrarCarga = async (req, res) => {
         rol: 'operador'
       }
     });
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'crear_carga_combustible',
+      'operador',
+      req.operador.nombre,
+      `Registró carga de ${litros_cargados} lts de combustible para vehículo ${vehiculo.placa}`
+    );
 
     // Actualizar el vehículo con los datos más recientes
     if (horas_motor_al_momento && horas_motor_al_momento > vehiculo.horas_motor_actual) {

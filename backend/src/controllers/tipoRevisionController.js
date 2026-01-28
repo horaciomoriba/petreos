@@ -1,6 +1,7 @@
 // src/controllers/tipoRevisionController.js
 
 import TipoRevision from '../models/tipoRevision.js';
+import registrarActividad from '../utils/activityLogger.js'; // ⭐ NUEVO IMPORT
 
 // ===== OBTENER TODOS LOS TIPOS DE REVISIÓN =====
 export const getTiposRevision = async (req, res) => {
@@ -189,6 +190,14 @@ export const createTipoRevision = async (req, res) => {
 
     await tipoRevision.save();
 
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'crear_tipo_revision',
+      'admin',
+      req.admin.nombre,
+      `Creó tipo de revisión ${nombre} (${frecuencia}) para ${tipo_vehiculo}`
+    );
+
     res.status(201).json({
       message: 'Tipo de revisión creado exitosamente',
       tipoRevision
@@ -233,6 +242,14 @@ export const updateTipoRevision = async (req, res) => {
 
     await tipoRevision.save();
 
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'actualizar_tipo_revision',
+      'admin',
+      req.admin.nombre,
+      `Actualizó tipo de revisión ${tipoRevision.nombre}`
+    );
+
     res.json({
       message: 'Tipo de revisión actualizado exitosamente',
       tipoRevision
@@ -275,6 +292,14 @@ export const agregarSeccion = async (req, res) => {
 
     await tipoRevision.save();
 
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'actualizar_tipo_revision',
+      'admin',
+      req.admin.nombre,
+      `Agregó sección "${seccion.nombre}" al tipo de revisión ${tipoRevision.nombre}`
+    );
+
     res.json({
       message: 'Sección agregada exitosamente',
       tipoRevision
@@ -311,12 +336,22 @@ export const agregarPregunta = async (req, res) => {
       return res.status(404).json({ message: 'Sección no encontrada' });
     }
 
+    const nombreSeccion = tipoRevision.secciones[seccionIndex].nombre;
+
     tipoRevision.secciones[seccionIndex].preguntas.push({
       numero: pregunta.numero,
       texto: pregunta.texto
     });
 
     await tipoRevision.save();
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'actualizar_tipo_revision',
+      'admin',
+      req.admin.nombre,
+      `Agregó pregunta #${pregunta.numero} a sección "${nombreSeccion}" en tipo de revisión ${tipoRevision.nombre}`
+    );
 
     res.json({
       message: 'Pregunta agregada exitosamente',
@@ -346,6 +381,14 @@ export const deleteTipoRevision = async (req, res) => {
     // Soft delete - marcar como inactivo
     tipoRevision.activo = false;
     await tipoRevision.save();
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'eliminar_tipo_revision',
+      'admin',
+      req.admin.nombre,
+      `Desactivó tipo de revisión ${tipoRevision.nombre}`
+    );
 
     res.json({ 
       message: 'Tipo de revisión desactivado exitosamente' 

@@ -5,6 +5,7 @@ import Vehiculo from '../models/vehiculo.js';
 import Revision from '../models/revision.js';
 import TipoRevision from '../models/tipoRevision.js';
 import { startOfDay, endOfDay, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import registrarActividad from '../utils/activityLogger.js'; // ⭐ NUEVO IMPORT
 
 // ==========================================
 // GET MI VEHÍCULO ASIGNADO
@@ -445,6 +446,14 @@ export const crearRevision = async (req, res) => {
     const revisionGuardada = await nuevaRevision.save();
     console.log("✅ Revisión guardada con ID:", revisionGuardada._id);
 
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'crear_revision',
+      'operador',
+      req.operador.nombre,
+      `Creó revisión ${tipoRevision.frecuencia} para vehículo ${vehiculo.placa}`
+    );
+
     console.log("========================================");
 
     res.status(201).json({
@@ -511,6 +520,14 @@ export const actualizarDatosVehiculo = async (req, res) => {
       updateData,
       { new: true, runValidators: true }
     ).populate('sede_actual', 'nombre ciudad');
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'actualizar_vehiculo',
+      'operador',
+      req.operador.nombre,
+      `Actualizó datos operacionales del vehículo ${vehiculoActualizado.placa}`
+    );
 
     // Transformar a camelCase
     const vehiculoTransformado = {

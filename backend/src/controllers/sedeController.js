@@ -1,4 +1,5 @@
 import Sede from '../models/sede.js';
+import registrarActividad from '../utils/activityLogger.js'; // ⭐ NUEVO IMPORT
 
 // @desc    Obtener todas las sedes
 // @route   GET /api/admin/sedes
@@ -90,6 +91,14 @@ export const createSede = async (req, res) => {
       email
     });
 
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'crear_sede',
+      'admin',
+      req.admin.nombre,
+      `Creó sede ${nombre}`
+    );
+
     res.status(201).json({
       success: true,
       message: 'Sede creada exitosamente',
@@ -151,6 +160,14 @@ export const updateSede = async (req, res) => {
 
     await sede.save();
 
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'actualizar_sede',
+      'admin',
+      req.admin.nombre,
+      `Actualizó sede ${sede.nombre}`
+    );
+
     res.status(200).json({
       success: true,
       message: 'Sede actualizada exitosamente',
@@ -201,6 +218,14 @@ export const deleteSede = async (req, res) => {
     sede.activo = false;
     await sede.save();
 
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'eliminar_sede',
+      'admin',
+      req.admin.nombre,
+      `Desactivó sede ${sede.nombre}`
+    );
+
     res.status(200).json({
       success: true,
       message: 'Sede desactivada exitosamente',
@@ -238,7 +263,17 @@ export const permanentDeleteSede = async (req, res) => {
       });
     }
 
+    const nombreSede = sede.nombre; // Guardar antes de eliminar
+
     await sede.deleteOne();
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'eliminar_sede',
+      'admin',
+      req.admin.nombre,
+      `Eliminó permanentemente sede ${nombreSede}`
+    );
 
     res.status(200).json({
       success: true,

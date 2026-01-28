@@ -5,6 +5,7 @@ import TipoRevision from '../models/tipoRevision.js';
 import Vehiculo from '../models/vehiculo.js';
 import Admin from '../models/admin.js'
 import { generarPDFRevision } from '../utils/pdfGenerator.js';
+import registrarActividad from '../utils/activityLogger.js'; // ⭐ NUEVO IMPORT
 import path from 'path'; 
 import fs from 'fs';      
 
@@ -314,6 +315,15 @@ export const createRevision = async (req, res) => {
 
     const revisionGuardada = await nuevaRevision.save();
     console.log("✅ Revisión guardada con ID:", revisionGuardada._id);
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'crear_revision',
+      'admin',
+      req.admin.nombre,
+      `Creó revisión ${tipoRevision.frecuencia} para vehículo ${vehiculo.placa}`
+    );
+
     console.log("========================================");
 
     res.status(201).json({
@@ -339,7 +349,8 @@ export const updateRevision = async (req, res) => {
     const { id } = req.params;
     const updates = req.body;
 
-    const revision = await Revision.findById(id);
+    const revision = await Revision.findById(id)
+      .populate('vehiculo', 'placa numero_economico');
 
     if (!revision) {
       return res.status(404).json({ message: 'Revisión no encontrada' });
@@ -374,6 +385,14 @@ export const updateRevision = async (req, res) => {
     }
 
     await revision.save();
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'actualizar_revision',
+      'admin',
+      req.admin.nombre,
+      `Actualizó revisión del vehículo ${revision.vehiculo.placa}`
+    );
 
     res.json({
       message: 'Revisión actualizada exitosamente',
@@ -521,7 +540,8 @@ export const deleteRevision = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const revision = await Revision.findById(id);
+    const revision = await Revision.findById(id)
+      .populate('vehiculo', 'placa numero_economico');
 
     if (!revision) {
       return res.status(404).json({ message: 'Revisión no encontrada' });
@@ -534,7 +554,17 @@ export const deleteRevision = async (req, res) => {
       });
     }
 
+    const placaVehiculo = revision.vehiculo.placa; // Guardar antes de eliminar
+
     await Revision.findByIdAndDelete(id);
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'eliminar_revision',
+      'admin',
+      req.admin.nombre,
+      `Eliminó revisión del vehículo ${placaVehiculo}`
+    );
 
     res.json({ 
       message: 'Revisión eliminada exitosamente' 
@@ -583,6 +613,14 @@ export const aprobarRevision = async (req, res) => {
     };
 
     await revision.save();
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'aprobar_revision',
+      'admin',
+      req.admin.nombre,
+      `Aprobó revisión ${revision.tipo_revision.frecuencia} del vehículo ${revision.vehiculo.placa}`
+    );
 
     // GENERAR PDF AUTOMÁTICAMENTE
     try {
@@ -740,6 +778,14 @@ export const regenerarPDFRevision = async (req, res) => {
     revision.pdf_url = pdfUrl;
     revision.pdf_generado_en = new Date();
     await revision.save();
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'actualizar_revision',
+      'admin',
+      req.admin.nombre,
+      `Regeneró PDF de revisión del vehículo ${revision.vehiculo.placa}`
+    );
 
     res.json({
       success: true,

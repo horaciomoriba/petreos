@@ -2,6 +2,7 @@
 
 import Reparacion from '../models/reparacion.js';
 import Vehiculo from '../models/vehiculo.js';
+import registrarActividad from '../utils/activityLogger.js'; // ⭐ NUEVO IMPORT
 
 // ============================================
 // CREATE - Crear nueva reparación
@@ -58,8 +59,8 @@ export const crearReparacion = async (req, res) => {
       costo_mano_obra: costo_mano_obra || 0,
       costo_total: costoTotal,
       registrado_por: {
-        admin_id: req.admin._id,    // ⭐ CORREGIDO
-        nombre: req.admin.name
+        admin_id: req.admin._id,
+        nombre: req.admin.nombre // ⭐ CORREGIDO: nombre en vez de name
       },
       estado: estado || 'completada',
       kilometraje_al_momento,
@@ -67,6 +68,14 @@ export const crearReparacion = async (req, res) => {
     });
 
     await nuevaReparacion.save();
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'crear_reparacion',
+      'admin',
+      req.admin.nombre,
+      `Registró reparación de ${categoria} para vehículo ${vehiculo.placa}`
+    );
 
     res.status(201).json({
       success: true,
@@ -154,8 +163,8 @@ export const obtenerReparacion = async (req, res) => {
 
     const reparacion = await Reparacion.findById(id)
       .populate('vehiculo', 'placa numero_economico marca modelo tipo_vehiculo')
-      .populate('registrado_por.admin_id', 'name email')
-      .populate('modificaciones.modificado_por.admin_id', 'name email');
+      .populate('registrado_por.admin_id', 'nombre email')
+      .populate('modificaciones.modificado_por.admin_id', 'nombre email');
 
     if (!reparacion) {
       return res.status(404).json({
@@ -197,7 +206,9 @@ export const actualizarReparacion = async (req, res) => {
       horas_motor_al_momento
     } = req.body;
 
-    const reparacion = await Reparacion.findById(id);
+    const reparacion = await Reparacion.findById(id)
+      .populate('vehiculo', 'placa numero_economico');
+
     if (!reparacion) {
       return res.status(404).json({
         success: false,
@@ -237,13 +248,21 @@ export const actualizarReparacion = async (req, res) => {
     reparacion.modificaciones.push({
       fecha: new Date(),
       modificado_por: {
-        admin_id: req.admin._id,    // ⭐ CORREGIDO
-        nombre: req.admin.name
+        admin_id: req.admin._id,
+        nombre: req.admin.nombre // ⭐ CORREGIDO: nombre en vez de name
       },
       descripcion: 'Reparación actualizada'
     });
 
     await reparacion.save();
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'actualizar_reparacion',
+      'admin',
+      req.admin.nombre,
+      `Actualizó reparación del vehículo ${reparacion.vehiculo.placa}`
+    );
 
     res.json({
       success: true,
@@ -268,7 +287,9 @@ export const eliminarReparacion = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const reparacion = await Reparacion.findById(id);
+    const reparacion = await Reparacion.findById(id)
+      .populate('vehiculo', 'placa numero_economico');
+
     if (!reparacion) {
       return res.status(404).json({
         success: false,
@@ -276,7 +297,17 @@ export const eliminarReparacion = async (req, res) => {
       });
     }
 
+    const placaVehiculo = reparacion.vehiculo.placa; // Guardar antes de eliminar
+
     await Reparacion.findByIdAndDelete(id);
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'eliminar_reparacion',
+      'admin',
+      req.admin.nombre,
+      `Eliminó reparación del vehículo ${placaVehiculo}`
+    );
 
     res.json({
       success: true,
