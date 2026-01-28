@@ -36,6 +36,8 @@ const NuevaRevisionOperador = () => {
     comentarios: ''
   });
 
+  const [seccionAbierta, setSeccionAbierta] = useState(0);
+
   useEffect(() => {
     if (!tipoRevisionId) {
       showToast.error('No se especificó el tipo de revisión');
@@ -211,6 +213,34 @@ const NuevaRevisionOperador = () => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const marcarSeccionCompleta = (seccionIdx) => {
+    const seccion = tipoRevision.secciones[seccionIdx];
+    let itemStartIndex = 0;
+    
+    // Calcular índice de inicio
+    for (let i = 0; i < seccionIdx; i++) {
+      itemStartIndex += tipoRevision.secciones[i].preguntas.length;
+    }
+    
+    // Marcar todos los items de esta sección como "bien"
+    setFormData(prev => ({
+      ...prev,
+      items: prev.items.map((item, idx) => {
+        if (idx >= itemStartIndex && idx < itemStartIndex + seccion.preguntas.length) {
+          return { ...item, estado: 'bien', observaciones: '' };
+        }
+        return item;
+      })
+    }));
+    
+    showToast.success(`Sección "${seccion.nombre}" marcada como completa`);
+  };
+
+  // 🆕 NUEVO - Toggle sección abierta/cerrada
+  const toggleSeccion = (seccionIdx) => {
+    setSeccionAbierta(prev => prev === seccionIdx ? -1 : seccionIdx);
   };
 
   // Calcular progreso
@@ -544,7 +574,7 @@ const NuevaRevisionOperador = () => {
                 </div>
               </div>
 
-              {/* Checklist por Secciones */}
+              {/* Checklist por Secciones - ACCORDION */}
               {tipoRevision.secciones && tipoRevision.secciones.length > 0 && (
                 <>
                   {tipoRevision.secciones
@@ -555,6 +585,11 @@ const NuevaRevisionOperador = () => {
                         itemStartIndex += tipoRevision.secciones[i].preguntas.length;
                       }
 
+                      const itemsSeccion = formData.items.slice(itemStartIndex, itemStartIndex + seccion.preguntas.length);
+                      const todoBien = itemsSeccion.every(item => item.estado === 'bien');
+                      const itemsMal = itemsSeccion.filter(item => item.estado === 'mal').length;
+                      const estaAbierta = seccionAbierta === seccionIdx;
+
                       const comentarioSeccion = formData.comentariosSecciones.find(
                         cs => cs.seccion_nombre === seccion.nombre
                       );
@@ -563,113 +598,183 @@ const NuevaRevisionOperador = () => {
                         <div 
                           key={seccionIdx} 
                           ref={el => sectionRefs.current[seccionIdx + 1] = el}
-                          className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden scroll-mt-24"
+                          className="bg-white rounded-lg border-2 border-gray-200 overflow-hidden scroll-mt-24 transition-all"
                         >
-                          {/* Header de Sección */}
-                          <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-transparent">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <h2 className="text-base font-semibold text-gray-900">{seccion.nombre}</h2>
-                                <p className="text-xs text-gray-500 mt-0.5">{seccion.preguntas.length} items a revisar</p>
-                              </div>
-                              <span className="px-2.5 py-1 text-xs font-semibold text-purple-700 bg-purple-100 rounded-lg border border-purple-200">
-                                {seccion.orden}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Preguntas */}
-                          <div className="p-4 sm:p-6 space-y-3">
-                            {seccion.preguntas.map((pregunta, preguntaIdx) => {
-                              const itemIndex = itemStartIndex + preguntaIdx;
-                              const item = formData.items[itemIndex];
+                          {/* 🆕 Header Colapsable con Quick Action */}
+                          <button
+                            type="button"
+                            onClick={() => toggleSeccion(seccionIdx)}
+                            className="w-full px-4 py-3 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors"
+                          >
+                            <div className="flex items-center gap-3">
+                              {/* Check visual */}
+                              {todoBien ? (
+                                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                  <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                  </svg>
+                                </div>
+                              ) : (
+                                <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                                  <span className="text-sm font-bold text-gray-700">{seccion.orden}</span>
+                                </div>
+                              )}
                               
-                              if (!item) return null;
+                              <div className="text-left">
+                                <h2 className="text-sm font-semibold text-gray-900">{seccion.nombre}</h2>
+                                <p className="text-xs text-gray-500">
+                                  {todoBien ? (
+                                    <span className="text-green-600 font-medium">✓ Completo</span>
+                                  ) : itemsMal > 0 ? (
+                                    <span className="text-red-600 font-medium">{itemsMal} problema{itemsMal !== 1 ? 's' : ''}</span>
+                                  ) : (
+                                    <span>{seccion.preguntas.length} items</span>
+                                  )}
+                                </p>
+                              </div>
+                            </div>
 
-                              return (
-                                <div key={preguntaIdx} className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-all">
-                                  <div className="flex flex-col gap-3">
-                                    {/* Pregunta */}
-                                    <div className="flex items-start gap-3">
-                                      <span className="flex-shrink-0 w-7 h-7 bg-white rounded-lg border-2 border-gray-300 flex items-center justify-center text-xs font-bold text-gray-700">
-                                        {pregunta.numero}
-                                      </span>
-                                      <p className="text-sm font-medium text-gray-900 leading-relaxed pt-1">
-                                        {pregunta.texto}
-                                      </p>
-                                    </div>
-                                    
-                                    {/* Botones Bien/Mal - Más grandes para mobile */}
-                                    <div className="grid grid-cols-2 gap-2">
-                                      <button
-                                        type="button"
-                                        onClick={() => handleItemChange(itemIndex, 'estado', 'bien')}
-                                        className={`py-3 px-4 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
-                                          item.estado === 'bien'
-                                            ? 'bg-green-600 text-white shadow-md scale-105'
-                                            : 'bg-white text-gray-700 hover:bg-gray-100 border-2 border-gray-200 active:scale-95'
-                                        }`}
-                                      >
-                                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <div className="flex items-center gap-2">
+                              {/* Quick Action: Marcar Todo Bien */}
+                              {!todoBien && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    marcarSeccionCompleta(seccionIdx);
+                                  }}
+                                  className="px-3 py-1.5 text-xs font-semibold text-green-700 bg-green-50 hover:bg-green-100 
+                                    rounded-lg border border-green-200 transition-colors flex items-center gap-1"
+                                >
+                                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                  Todo Bien
+                                </button>
+                              )}
+                              
+                              {/* Icono expandir/contraer */}
+                              <svg 
+                                className={`w-5 h-5 text-gray-400 transition-transform ${estaAbierta ? 'rotate-180' : ''}`} 
+                                fill="none" 
+                                viewBox="0 0 24 24" 
+                                stroke="currentColor" 
+                                strokeWidth={2}
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </div>
+                          </button>
+
+                          {/* 🆕 Body expandible */}
+                          {estaAbierta && (
+                            <div className="p-4 space-y-2 border-t border-gray-200">
+                              {seccion.preguntas.map((pregunta, preguntaIdx) => {
+                                const itemIndex = itemStartIndex + preguntaIdx;
+                                const item = formData.items[itemIndex];
+                                
+                                if (!item) return null;
+
+                                const esBien = item.estado === 'bien';
+
+                                return (
+                                  <div 
+                                    key={preguntaIdx} 
+                                    className={`rounded-lg transition-all ${
+                                      esBien 
+                                        ? 'bg-green-50 border border-green-200 p-2' 
+                                        : 'bg-red-50 border-2 border-red-200 p-4'
+                                    }`}
+                                  >
+                                    {esBien ? (
+                                      // 🆕 COMPACTO: Item "Bien" en 1 línea
+                                      <div className="flex items-center gap-2">
+                                        <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                                         </svg>
-                                        Bien
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleItemChange(itemIndex, 'estado', 'mal')}
-                                        className={`py-3 px-4 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
-                                          item.estado === 'mal'
-                                            ? 'bg-red-600 text-white shadow-md scale-105'
-                                            : 'bg-white text-gray-700 hover:bg-gray-100 border-2 border-gray-200 active:scale-95'
-                                        }`}
-                                      >
-                                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                                        </svg>
-                                        Mal
-                                      </button>
-                                    </div>
+                                        <span className="flex-1 text-sm text-gray-700">{pregunta.texto}</span>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleItemChange(itemIndex, 'estado', 'mal')}
+                                          className="text-xs text-gray-500 hover:text-gray-700 underline"
+                                        >
+                                          Marcar mal
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      // 🆕 EXPANDIDO: Item "Mal" completo
+                                      <div className="space-y-3">
+                                        <div className="flex items-start gap-2">
+                                          <span className="flex-shrink-0 w-6 h-6 bg-red-200 rounded flex items-center justify-center text-xs font-bold text-red-900">
+                                            {pregunta.numero}
+                                          </span>
+                                          <div className="flex-1">
+                                            <p className="text-sm font-medium text-gray-900">{pregunta.texto}</p>
+                                          </div>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleItemChange(itemIndex, 'estado', 'bien')}
+                                            className="text-xs text-gray-600 hover:text-gray-900 underline"
+                                          >
+                                            Marcar bien
+                                          </button>
+                                        </div>
+                                        
+                                        <div className="grid grid-cols-2 gap-2">
+                                          <button
+                                            type="button"
+                                            onClick={() => handleItemChange(itemIndex, 'estado', 'bien')}
+                                            className="py-2 px-3 rounded-lg text-sm font-semibold bg-white text-gray-700 
+                                              border-2 border-gray-200 hover:bg-gray-50 transition-all"
+                                          >
+                                            Bien
+                                          </button>
+                                          <button
+                                            type="button"
+                                            className="py-2 px-3 rounded-lg text-sm font-semibold bg-red-600 text-white shadow-sm"
+                                            disabled
+                                          >
+                                            Mal
+                                          </button>
+                                        </div>
 
-                                    {/* Observaciones */}
-                                    {item.estado === 'mal' && (
-                                      <div className="pt-2 border-t border-gray-200">
-                                        <label className="block text-xs font-medium text-gray-600 mb-2">
-                                          Describe el problema
-                                        </label>
-                                        <input
-                                          type="text"
-                                          value={item.observaciones}
-                                          onChange={(e) => handleItemChange(itemIndex, 'observaciones', e.target.value)}
-                                          className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                                          placeholder="Ej: Filtro obstruido, requiere cambio..."
-                                        />
+                                        <div className="pt-2 border-t border-red-200">
+                                          <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                                            Describe el problema
+                                          </label>
+                                          <input
+                                            type="text"
+                                            value={item.observaciones}
+                                            onChange={(e) => handleItemChange(itemIndex, 'observaciones', e.target.value)}
+                                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg 
+                                              focus:outline-none focus:ring-2 focus:ring-red-500"
+                                            placeholder="Ej: Filtro obstruido, requiere cambio..."
+                                          />
+                                        </div>
                                       </div>
                                     )}
                                   </div>
-                                </div>
-                              );
-                            })}
+                                );
+                              })}
 
-                            {/* 🆕 NUEVO - Comentarios de Sección */}
-                            {seccion.permite_comentarios && (
-                              <div className="pt-4 border-t-2 border-dashed border-gray-200">
-                                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                                  <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                                  </svg>
-                                  Comentarios de esta sección
-                                </label>
-                                <textarea
-                                  value={comentarioSeccion?.comentario || ''}
-                                  onChange={(e) => handleComentarioSeccionChange(seccion.nombre, e.target.value)}
-                                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent resize-none"
-                                  rows="3"
-                                  placeholder={seccion.placeholder_comentarios || 'Comentarios adicionales para esta sección...'}
-                                ></textarea>
-                              </div>
-                            )}
-                          </div>
+                              {/* Comentarios de Sección */}
+                              {seccion.permite_comentarios && (
+                                <div className="pt-3 border-t-2 border-dashed border-gray-200 mt-3">
+                                  <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                                    Comentarios de esta sección
+                                  </label>
+                                  <textarea
+                                    value={comentarioSeccion?.comentario || ''}
+                                    onChange={(e) => handleComentarioSeccionChange(seccion.nombre, e.target.value)}
+                                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg 
+                                      focus:outline-none focus:ring-2 focus:ring-gray-900 resize-none"
+                                    rows="2"
+                                    placeholder={seccion.placeholder_comentarios || 'Comentarios adicionales...'}
+                                  ></textarea>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -704,151 +809,229 @@ const NuevaRevisionOperador = () => {
                             </div>
                           </div>
 
-                          {/* Lista de Neumáticos */}
-                          <div className="space-y-3 mb-4">
-                            {eje.neumaticos
-                              .sort((a, b) => {
-                                if (a.lado === b.lado) return a.posicion_global - b.posicion_global;
-                                return a.lado === 'izquierdo' ? -1 : 1;
-                              })
-                              .map((neumatico) => {
-                                const llanta = formData.neumaticos.find(l => l.posicion === neumatico.posicion_global);
-                                const tieneProblema = llanta?.presion_estado === 'Mal' || llanta?.callo_estado === 'Mal';
-                                
-                                return (
-                                  <div 
-                                    key={`llanta-${neumatico.posicion_global}`} 
-                                    className={`border-2 rounded-lg p-4 transition-all ${
-                                      tieneProblema 
-                                        ? 'bg-red-50 border-red-200' 
-                                        : 'bg-gray-50 border-gray-200'
-                                    }`}
-                                  >
-                                    {/* Header del Neumático */}
-                                    <div className="flex items-center gap-3 mb-3">
-                                      <div className={`w-12 h-12 rounded-lg border-2 flex items-center justify-center flex-shrink-0 ${
-                                        tieneProblema 
-                                          ? 'bg-red-100 border-red-400' 
-                                          : 'bg-white border-gray-300'
-                                      }`}>
-                                        <span className="text-lg font-bold text-gray-900">{neumatico.posicion_global}</span>
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                        <div className="text-sm font-semibold text-gray-900">
-                                          Posición {neumatico.posicion_global}
-                                        </div>
-                                        <div className="text-xs text-gray-500 capitalize">
-                                          Eje {eje.numero} • Lado {neumatico.lado}
-                                        </div>
-                                      </div>
-                                    </div>
+{/* 🆕 Tabla Responsive de Neumáticos - SIN scroll horizontal */}
+<div className="mb-4">
+  {/* Desktop: Tabla completa */}
+  <div className="hidden md:block overflow-x-auto">
+    <table className="w-full text-sm">
+      <thead>
+        <tr className="border-b border-gray-200">
+          <th className="px-2 py-2 text-left text-xs font-semibold text-gray-700">Pos</th>
+          <th className="px-2 py-2 text-left text-xs font-semibold text-gray-700">Eje</th>
+          <th className="px-2 py-2 text-left text-xs font-semibold text-gray-700">Presión (PSI)</th>
+          <th className="px-2 py-2 text-center text-xs font-semibold text-gray-700">P</th>
+          <th className="px-2 py-2 text-left text-xs font-semibold text-gray-700">Callo (mm)</th>
+          <th className="px-2 py-2 text-center text-xs font-semibold text-gray-700">C</th>
+        </tr>
+      </thead>
+      <tbody>
+        {eje.neumaticos
+          .sort((a, b) => a.posicion_global - b.posicion_global)
+          .map((neumatico) => {
+            const llanta = formData.neumaticos.find(l => l.posicion === neumatico.posicion_global);
+            const tieneProblema = llanta?.presion_estado === 'Mal' || llanta?.callo_estado === 'Mal';
+            
+            return (
+              <tr 
+                key={neumatico.posicion_global}
+                className={`border-b border-gray-100 ${tieneProblema ? 'bg-red-50' : 'hover:bg-gray-50'}`}
+              >
+                <td className="px-2 py-3">
+                  <div className={`w-8 h-8 rounded flex items-center justify-center font-bold text-sm ${
+                    tieneProblema ? 'bg-red-200 text-red-900' : 'bg-gray-200 text-gray-900'
+                  }`}>
+                    {neumatico.posicion_global}
+                  </div>
+                </td>
+                <td className="px-2 py-3 text-xs text-gray-600 capitalize">
+                  {eje.numero} • {neumatico.lado}
+                </td>
+                <td className="px-2 py-3">
+                  <input
+                    type="number"
+                    value={llanta?.presion_medida || ''}
+                    onChange={(e) => handleNeumaticoChange(neumatico.posicion_global, 'presion_medida', parseFloat(e.target.value) || 0)}
+                    min="0"
+                    max="200"
+                    step="0.5"
+                    className="w-20 px-2 py-1 text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  />
+                </td>
+                <td className="px-2 py-3">
+                  <div className="flex gap-1 justify-center">
+                    <button
+                      type="button"
+                      onClick={() => handleNeumaticoChange(neumatico.posicion_global, 'presion_estado', 'Bien')}
+                      className={`w-7 h-7 rounded flex items-center justify-center transition-all ${
+                        llanta?.presion_estado === 'Bien' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500'
+                      }`}
+                    >
+                      ✓
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleNeumaticoChange(neumatico.posicion_global, 'presion_estado', 'Mal')}
+                      className={`w-7 h-7 rounded flex items-center justify-center transition-all ${
+                        llanta?.presion_estado === 'Mal' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-500'
+                      }`}
+                    >
+                      ✗
+                    </button>
+                  </div>
+                </td>
+                <td className="px-2 py-3">
+                  <input
+                    type="number"
+                    value={llanta?.callo_medida || ''}
+                    onChange={(e) => handleNeumaticoChange(neumatico.posicion_global, 'callo_medida', parseFloat(e.target.value) || 0)}
+                    min="0"
+                    max="30"
+                    step="0.1"
+                    className="w-20 px-2 py-1 text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  />
+                </td>
+                <td className="px-2 py-3">
+                  <div className="flex gap-1 justify-center">
+                    <button
+                      type="button"
+                      onClick={() => handleNeumaticoChange(neumatico.posicion_global, 'callo_estado', 'Bien')}
+                      className={`w-7 h-7 rounded flex items-center justify-center transition-all ${
+                        llanta?.callo_estado === 'Bien' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500'
+                      }`}
+                    >
+                      ✓
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleNeumaticoChange(neumatico.posicion_global, 'callo_estado', 'Mal')}
+                      className={`w-7 h-7 rounded flex items-center justify-center transition-all ${
+                        llanta?.callo_estado === 'Mal' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-500'
+                      }`}
+                    >
+                      ✗
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+      </tbody>
+    </table>
+  </div>
 
-                                    {/* 🆕 NUEVO - Campos de Presión */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                                      {/* Presión Medida */}
-                                      <div>
-                                        <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                                          Presión (PSI)
-                                        </label>
-                                        <input
-                                          type="number"
-                                          value={llanta?.presion_medida || ''}
-                                          onChange={(e) => handleNeumaticoChange(neumatico.posicion_global, 'presion_medida', parseFloat(e.target.value) || 0)}
-                                          min="0"
-                                          max="200"
-                                          step="0.5"
-                                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                                          placeholder="95"
-                                        />
-                                      </div>
+  {/* Mobile: Mini-cards compactos */}
+  <div className="md:hidden space-y-2">
+    {eje.neumaticos
+      .sort((a, b) => a.posicion_global - b.posicion_global)
+      .map((neumatico) => {
+        const llanta = formData.neumaticos.find(l => l.posicion === neumatico.posicion_global);
+        const tieneProblema = llanta?.presion_estado === 'Mal' || llanta?.callo_estado === 'Mal';
+        
+        return (
+          <div 
+            key={neumatico.posicion_global}
+            className={`border-2 rounded-lg p-3 ${
+              tieneProblema ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'
+            }`}
+          >
+            {/* Header: Posición + Eje */}
+            <div className="flex items-center gap-2 mb-3">
+              <div className={`w-10 h-10 rounded flex items-center justify-center font-bold ${
+                tieneProblema ? 'bg-red-200 text-red-900' : 'bg-gray-200 text-gray-900'
+              }`}>
+                {neumatico.posicion_global}
+              </div>
+              <div className="text-xs text-gray-600 capitalize">
+                Eje {eje.numero} • {neumatico.lado}
+              </div>
+            </div>
 
-                                      {/* Estado de Presión */}
-                                      <div>
-                                        <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                                          Estado de Presión
-                                        </label>
-                                        <div className="grid grid-cols-2 gap-2">
-                                          <button
-                                            type="button"
-                                            onClick={() => handleNeumaticoChange(neumatico.posicion_global, 'presion_estado', 'Bien')}
-                                            className={`py-2 px-3 rounded-lg text-xs font-semibold transition-all ${
-                                              llanta?.presion_estado === 'Bien'
-                                                ? 'bg-green-600 text-white shadow-sm'
-                                                : 'bg-white text-gray-700 border-2 border-gray-200 hover:bg-gray-50'
-                                            }`}
-                                          >
-                                            Bien
-                                          </button>
-                                          <button
-                                            type="button"
-                                            onClick={() => handleNeumaticoChange(neumatico.posicion_global, 'presion_estado', 'Mal')}
-                                            className={`py-2 px-3 rounded-lg text-xs font-semibold transition-all ${
-                                              llanta?.presion_estado === 'Mal'
-                                                ? 'bg-red-600 text-white shadow-sm'
-                                                : 'bg-white text-gray-700 border-2 border-gray-200 hover:bg-gray-50'
-                                            }`}
-                                          >
-                                            Mal
-                                          </button>
-                                        </div>
-                                      </div>
-                                    </div>
+            {/* Grid 2x2: Presión y Callo */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Presión */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Presión (PSI)
+                </label>
+                <div className="flex gap-1">
+                  <input
+                    type="number"
+                    value={llanta?.presion_medida || ''}
+                    onChange={(e) => handleNeumaticoChange(neumatico.posicion_global, 'presion_medida', parseFloat(e.target.value) || 0)}
+                    min="0"
+                    max="200"
+                    step="0.5"
+                    className="flex-1 px-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    placeholder="95"
+                  />
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleNeumaticoChange(neumatico.posicion_global, 'presion_estado', 'Bien')}
+                      className={`w-8 h-8 rounded flex items-center justify-center ${
+                        llanta?.presion_estado === 'Bien' ? 'bg-green-600 text-white' : 'bg-white border-2 border-gray-200'
+                      }`}
+                    >
+                      ✓
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleNeumaticoChange(neumatico.posicion_global, 'presion_estado', 'Mal')}
+                      className={`w-8 h-8 rounded flex items-center justify-center ${
+                        llanta?.presion_estado === 'Mal' ? 'bg-red-600 text-white' : 'bg-white border-2 border-gray-200'
+                      }`}
+                    >
+                      ✗
+                    </button>
+                  </div>
+                </div>
+              </div>
 
-                                    {/* 🆕 NUEVO - Campos de Callo/Profundidad */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                      {/* Callo Medido */}
-                                      <div>
-                                        <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                                          Profundidad del Callo (mm)
-                                        </label>
-                                        <input
-                                          type="number"
-                                          value={llanta?.callo_medida || ''}
-                                          onChange={(e) => handleNeumaticoChange(neumatico.posicion_global, 'callo_medida', parseFloat(e.target.value) || 0)}
-                                          min="0"
-                                          max="30"
-                                          step="0.1"
-                                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                                          placeholder="8.0"
-                                        />
-                                      </div>
+              {/* Callo */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Callo (mm)
+                </label>
+                <div className="flex gap-1">
+                  <input
+                    type="number"
+                    value={llanta?.callo_medida || ''}
+                    onChange={(e) => handleNeumaticoChange(neumatico.posicion_global, 'callo_medida', parseFloat(e.target.value) || 0)}
+                    min="0"
+                    max="30"
+                    step="0.1"
+                    className="flex-1 px-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    placeholder="8"
+                  />
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleNeumaticoChange(neumatico.posicion_global, 'callo_estado', 'Bien')}
+                      className={`w-8 h-8 rounded flex items-center justify-center ${
+                        llanta?.callo_estado === 'Bien' ? 'bg-green-600 text-white' : 'bg-white border-2 border-gray-200'
+                      }`}
+                    >
+                      ✓
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleNeumaticoChange(neumatico.posicion_global, 'callo_estado', 'Mal')}
+                      className={`w-8 h-8 rounded flex items-center justify-center ${
+                        llanta?.callo_estado === 'Mal' ? 'bg-red-600 text-white' : 'bg-white border-2 border-gray-200'
+                      }`}
+                    >
+                      ✗
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+  </div>
+</div>
 
-                                      {/* Estado del Callo */}
-                                      <div>
-                                        <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                                          Estado del Callo
-                                        </label>
-                                        <div className="grid grid-cols-2 gap-2">
-                                          <button
-                                            type="button"
-                                            onClick={() => handleNeumaticoChange(neumatico.posicion_global, 'callo_estado', 'Bien')}
-                                            className={`py-2 px-3 rounded-lg text-xs font-semibold transition-all ${
-                                              llanta?.callo_estado === 'Bien'
-                                                ? 'bg-green-600 text-white shadow-sm'
-                                                : 'bg-white text-gray-700 border-2 border-gray-200 hover:bg-gray-50'
-                                            }`}
-                                          >
-                                            Bien
-                                          </button>
-                                          <button
-                                            type="button"
-                                            onClick={() => handleNeumaticoChange(neumatico.posicion_global, 'callo_estado', 'Mal')}
-                                            className={`py-2 px-3 rounded-lg text-xs font-semibold transition-all ${
-                                              llanta?.callo_estado === 'Mal'
-                                                ? 'bg-red-600 text-white shadow-sm'
-                                                : 'bg-white text-gray-700 border-2 border-gray-200 hover:bg-gray-50'
-                                            }`}
-                                          >
-                                            Mal
-                                          </button>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
-                              })
-                            }
-                          </div>
                         </div>
                       ))}
                     </div>
