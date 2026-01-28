@@ -27,7 +27,8 @@ const cargaCombustibleSchema = new mongoose.Schema({
   horas_motor_anterior: {
     type: Number,
     required: [true, 'Las horas del motor anterior son obligatorias'],
-    min: [0, 'Las horas anteriores no pueden ser negativas']
+    min: [0, 'Las horas anteriores no pueden ser negativas'],
+    default: 0
   },
 
   horas_motor_al_momento: {
@@ -38,7 +39,8 @@ const cargaCombustibleSchema = new mongoose.Schema({
 
   kilometraje_anterior: {
     type: Number,
-    min: [0, 'El kilometraje anterior no puede ser negativo']
+    min: [0, 'El kilometraje anterior no puede ser negativo'],
+    default: 0
   },
 
   kilometraje_al_momento: {
@@ -79,19 +81,23 @@ const cargaCombustibleSchema = new mongoose.Schema({
   rendimiento: {
     horas_trabajadas: {
       type: Number,
-      min: [0, 'Las horas trabajadas no pueden ser negativas']
+      min: [0, 'Las horas trabajadas no pueden ser negativas'],
+      default: 0
     },
     kilometros_recorridos: {
       type: Number,
-      min: [0, 'Los kilómetros recorridos no pueden ser negativos']
+      min: [0, 'Los kilómetros recorridos no pueden ser negativos'],
+      default: 0
     },
     consumo_por_hora: {
       type: Number,
-      min: [0, 'El consumo por hora no puede ser negativo']
+      min: [0, 'El consumo por hora no puede ser negativo'],
+      default: 0
     },
     consumo_por_km: {
       type: Number,
-      min: [0, 'El consumo por km no puede ser negativo']
+      min: [0, 'El consumo por km no puede ser negativo'],
+      default: 0
     },
     calculado: {
       type: Boolean,
@@ -129,110 +135,132 @@ cargaCombustibleSchema.index({ 'registrado_por.user_id': 1 });
 
 // ⭐ MIDDLEWARE PRE-SAVE: Calcular rendimiento usando campos propios
 cargaCombustibleSchema.pre('save', function(next) {
-  // Solo calcular si es un documento nuevo o si cambiaron los valores relevantes
-  if (!this.isNew && !this.isModified('horas_motor_anterior') && 
-      !this.isModified('horas_motor_al_momento') && 
-      !this.isModified('litros_cargados') &&
-      !this.isModified('kilometraje_anterior') &&
-      !this.isModified('kilometraje_al_momento')) {
-    return next();
-  }
+  try {
+    // Solo calcular si es un documento nuevo o si cambiaron los valores relevantes
+    if (!this.isNew && !this.isModified('horas_motor_anterior') && 
+        !this.isModified('horas_motor_al_momento') && 
+        !this.isModified('litros_cargados') &&
+        !this.isModified('kilometraje_anterior') &&
+        !this.isModified('kilometraje_al_momento')) {
+      return next();
+    }
 
-  const horasAnterior = this.horas_motor_anterior || 0;
-  const horasActual = this.horas_motor_al_momento;
-  const horasTrabajadas = horasActual - horasAnterior;
+    // Asegurar que los valores existan
+    const horasAnterior = Number(this.horas_motor_anterior) || 0;
+    const horasActual = Number(this.horas_motor_al_momento) || 0;
+    const horasTrabajadas = horasActual - horasAnterior;
 
-  const kmAnterior = this.kilometraje_anterior || 0;
-  const kmActual = this.kilometraje_al_momento || 0;
-  const kmRecorridos = kmActual - kmAnterior;
-  
-  // Calcular rendimiento si las horas trabajadas son positivas
-  if (horasTrabajadas > 0) {
-    const consumoPorHora = this.litros_cargados / horasTrabajadas;
-    const consumoPorKm = kmRecorridos > 0 ? this.litros_cargados / kmRecorridos : 0;
+    const kmAnterior = Number(this.kilometraje_anterior) || 0;
+    const kmActual = Number(this.kilometraje_al_momento) || 0;
+    const kmRecorridos = kmActual - kmAnterior;
     
-    this.rendimiento = {
-      horas_trabajadas: parseFloat(horasTrabajadas.toFixed(2)),
-      kilometros_recorridos: parseFloat(kmRecorridos.toFixed(2)),
-      consumo_por_hora: parseFloat(consumoPorHora.toFixed(2)),
-      consumo_por_km: parseFloat(consumoPorKm.toFixed(3)),
-      calculado: true
-    };
-  } else if (horasTrabajadas === 0) {
-    // Horas no aumentaron
-    this.rendimiento = {
-      horas_trabajadas: 0,
-      kilometros_recorridos: parseFloat(kmRecorridos.toFixed(2)),
-      consumo_por_hora: 0,
-      consumo_por_km: 0,
-      calculado: false
-    };
-  } else {
-    // Horas retrocedieron (error en datos)
-    this.rendimiento = {
-      horas_trabajadas: parseFloat(horasTrabajadas.toFixed(2)),
-      kilometros_recorridos: parseFloat(kmRecorridos.toFixed(2)),
-      consumo_por_hora: 0,
-      consumo_por_km: 0,
-      calculado: false
-    };
-  }
+    // Calcular rendimiento si las horas trabajadas son positivas
+    if (horasTrabajadas > 0 && this.litros_cargados > 0) {
+      const consumoPorHora = this.litros_cargados / horasTrabajadas;
+      const consumoPorKm = kmRecorridos > 0 ? this.litros_cargados / kmRecorridos : 0;
+      
+      this.rendimiento = {
+        horas_trabajadas: parseFloat(horasTrabajadas.toFixed(2)),
+        kilometros_recorridos: parseFloat(kmRecorridos.toFixed(2)),
+        consumo_por_hora: parseFloat(consumoPorHora.toFixed(2)),
+        consumo_por_km: parseFloat(consumoPorKm.toFixed(3)),
+        calculado: true
+      };
+    } else if (horasTrabajadas === 0) {
+      // Horas no aumentaron
+      this.rendimiento = {
+        horas_trabajadas: 0,
+        kilometros_recorridos: parseFloat(kmRecorridos.toFixed(2)),
+        consumo_por_hora: 0,
+        consumo_por_km: 0,
+        calculado: false
+      };
+    } else {
+      // Horas retrocedieron (error en datos)
+      this.rendimiento = {
+        horas_trabajadas: parseFloat(horasTrabajadas.toFixed(2)),
+        kilometros_recorridos: parseFloat(kmRecorridos.toFixed(2)),
+        consumo_por_hora: 0,
+        consumo_por_km: 0,
+        calculado: false
+      };
+    }
 
-  next();
+    next();
+  } catch (error) {
+    console.error('Error en pre-save de CargaCombustible:', error);
+    next(error);
+  }
 });
 
 // MÉTODO ESTÁTICO: Obtener estadísticas de un vehículo
 cargaCombustibleSchema.statics.getEstadisticasVehiculo = async function(vehiculoId) {
-  const stats = await this.aggregate([
-    {
-      $match: { 
-        vehiculo: new mongoose.Types.ObjectId(vehiculoId),
-        'rendimiento.calculado': true
+  try {
+    const stats = await this.aggregate([
+      {
+        $match: { 
+          vehiculo: new mongoose.Types.ObjectId(vehiculoId),
+          'rendimiento.calculado': true
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          total_litros: { $sum: '$litros_cargados' },
+          total_costo: { $sum: '$costo' },
+          consumo_promedio_hora: { $avg: '$rendimiento.consumo_por_hora' },
+          consumo_promedio_km: { $avg: '$rendimiento.consumo_por_km' },
+          total_cargas: { $sum: 1 }
+        }
       }
-    },
-    {
-      $group: {
-        _id: null,
-        total_litros: { $sum: '$litros_cargados' },
-        total_costo: { $sum: '$costo' },
-        consumo_promedio_hora: { $avg: '$rendimiento.consumo_por_hora' },
-        consumo_promedio_km: { $avg: '$rendimiento.consumo_por_km' },
-        total_cargas: { $sum: 1 }
-      }
-    }
-  ]);
+    ]);
 
-  return stats.length > 0 ? stats[0] : {
-    total_litros: 0,
-    total_costo: 0,
-    consumo_promedio_hora: 0,
-    consumo_promedio_km: 0,
-    total_cargas: 0
-  };
+    return stats.length > 0 ? stats[0] : {
+      total_litros: 0,
+      total_costo: 0,
+      consumo_promedio_hora: 0,
+      consumo_promedio_km: 0,
+      total_cargas: 0
+    };
+  } catch (error) {
+    console.error('Error en getEstadisticasVehiculo:', error);
+    return {
+      total_litros: 0,
+      total_costo: 0,
+      consumo_promedio_hora: 0,
+      consumo_promedio_km: 0,
+      total_cargas: 0
+    };
+  }
 };
 
 // MÉTODO ESTÁTICO: Obtener histórico con rendimiento
 cargaCombustibleSchema.statics.getHistoricoCompleto = async function(filtros = {}) {
-  const query = this.find(filtros)
-    .populate('vehiculo', 'placa numero_economico marca modelo tipo_vehiculo')
-    .sort({ fecha_carga: -1 })
-    .lean();
+  try {
+    const query = this.find(filtros)
+      .populate('vehiculo', 'placa numero_economico marca modelo tipo_vehiculo')
+      .sort({ fecha_carga: -1 })
+      .lean();
 
-  return await query;
+    return await query;
+  } catch (error) {
+    console.error('Error en getHistoricoCompleto:', error);
+    return [];
+  }
 };
 
 // ⭐ MÉTODO DE INSTANCIA: Recalcular rendimiento manualmente (usa campos propios)
 cargaCombustibleSchema.methods.recalcularRendimiento = async function() {
   try {
-    const horasAnterior = this.horas_motor_anterior || 0;
-    const horasActual = this.horas_motor_al_momento;
+    const horasAnterior = Number(this.horas_motor_anterior) || 0;
+    const horasActual = Number(this.horas_motor_al_momento) || 0;
     const horasTrabajadas = horasActual - horasAnterior;
 
-    const kmAnterior = this.kilometraje_anterior || 0;
-    const kmActual = this.kilometraje_al_momento || 0;
+    const kmAnterior = Number(this.kilometraje_anterior) || 0;
+    const kmActual = Number(this.kilometraje_al_momento) || 0;
     const kmRecorridos = kmActual - kmAnterior;
     
-    if (horasTrabajadas > 0) {
+    if (horasTrabajadas > 0 && this.litros_cargados > 0) {
       const consumoPorHora = this.litros_cargados / horasTrabajadas;
       const consumoPorKm = kmRecorridos > 0 ? this.litros_cargados / kmRecorridos : 0;
       
@@ -261,8 +289,9 @@ cargaCombustibleSchema.methods.recalcularRendimiento = async function() {
       };
     }
 
-    return this.save();
+    return await this.save();
   } catch (error) {
+    console.error('Error en recalcularRendimiento:', error);
     throw error;
   }
 };
