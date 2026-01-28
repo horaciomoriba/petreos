@@ -29,8 +29,13 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('adminToken');
-      window.location.href = '/login';
+      // SOLO redirigir si NO es el endpoint de login
+      const isLoginEndpoint = error.config?.url?.includes('/auth/login');
+      
+      if (!isLoginEndpoint) {
+        localStorage.removeItem('adminToken');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

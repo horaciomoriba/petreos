@@ -29,8 +29,13 @@ userApi.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('userToken');
-      window.location.href = '/login';
+      // SOLO redirigir si NO es el endpoint de login
+      const isLoginEndpoint = error.config?.url?.includes('/auth/') && error.config?.url?.includes('/login');
+      
+      if (!isLoginEndpoint) {
+        localStorage.removeItem('userToken');
+        window.location.href = '/user/login';
+      }
     }
     return Promise.reject(error);
   }

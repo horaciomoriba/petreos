@@ -42,11 +42,9 @@ const userAuthSlice = createSlice({
     },
     loginFailure: (state, action) => {
       state.loading = false;
-      state.isAuthenticated = false;
-      state.user = null;
-      state.token = null;
       state.error = action.payload;
-      localStorage.removeItem('userToken');
+      // NO tocar token ni isAuthenticated aquí
+      // Solo manejar el error
     },
     logout: (state) => {
       state.user = null;
