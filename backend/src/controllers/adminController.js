@@ -1,8 +1,9 @@
 import Admin from '../models/admin.js';
 import bcrypt from 'bcryptjs';
-import Sede from '../models/sede.js';        // ⭐ NUEVO
-import Vehiculo from '../models/vehiculo.js'; // ⭐ NUEVO
-import Revision from '../models/revision.js'; // ⭐ NUEVO
+import Sede from '../models/sede.js';
+import Vehiculo from '../models/vehiculo.js';
+import Revision from '../models/revision.js';
+import registrarActividad from '../utils/activityLogger.js'; // ⭐ NUEVO IMPORT
 
 // ==========================================
 // CRUD ADMINS (Solo Super Admin)
@@ -136,6 +137,14 @@ export const createAdmin = async (req, res) => {
       areas: areas || [],
       permisos: permisos || {}
     });
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'crear_admin',
+      'admin',
+      req.admin.nombre,
+      `Creó administrador ${nombre} con rol ${rol}`
+    );
     
     // Obtener admin creado con populate
     const adminCreado = await Admin.findById(admin._id)
@@ -214,6 +223,14 @@ export const updateAdmin = async (req, res) => {
     if (activo !== undefined) admin.activo = activo;
     
     await admin.save();
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'actualizar_admin',
+      'admin',
+      req.admin.nombre,
+      `Actualizó datos del administrador ${admin.nombre}`
+    );
     
     const adminActualizado = await Admin.findById(admin._id)
       .populate('sedes', 'nombre ciudad')
@@ -260,6 +277,14 @@ export const updatePermisos = async (req, res) => {
     
     admin.permisos = permisos;
     await admin.save();
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'actualizar_admin',
+      'admin',
+      req.admin.nombre,
+      `Actualizó permisos del administrador ${admin.nombre}`
+    );
     
     const adminActualizado = await Admin.findById(admin._id)
       .populate('sedes', 'nombre ciudad')
@@ -306,6 +331,14 @@ export const updateSedes = async (req, res) => {
     
     admin.sedes = sedes;
     await admin.save();
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'actualizar_admin',
+      'admin',
+      req.admin.nombre,
+      `Actualizó sedes asignadas al administrador ${admin.nombre}`
+    );
     
     const adminActualizado = await Admin.findById(admin._id)
       .populate('sedes', 'nombre ciudad')
@@ -354,6 +387,14 @@ export const cambiarPasswordAdmin = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     admin.password = await bcrypt.hash(nuevaPassword, salt);
     await admin.save();
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'actualizar_admin',
+      'admin',
+      req.admin.nombre,
+      `Cambió contraseña del administrador ${admin.nombre}`
+    );
     
     res.json({
       success: true,
@@ -394,6 +435,14 @@ export const deleteAdmin = async (req, res) => {
     // Desactivar admin
     admin.activo = false;
     await admin.save();
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'eliminar_admin',
+      'admin',
+      req.admin.nombre,
+      `Desactivó al administrador ${admin.nombre}`
+    );
     
     res.json({
       success: true,
@@ -425,6 +474,14 @@ export const reactivarAdmin = async (req, res) => {
     
     admin.activo = true;
     await admin.save();
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'actualizar_admin',
+      'admin',
+      req.admin.nombre,
+      `Reactivó al administrador ${admin.nombre}`
+    );
     
     const adminActualizado = await Admin.findById(admin._id)
       .populate('sedes', 'nombre ciudad')

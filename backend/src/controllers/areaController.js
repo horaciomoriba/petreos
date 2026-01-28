@@ -1,4 +1,5 @@
 import Area from '../models/area.js';
+import registrarActividad from '../utils/activityLogger.js'; // ⭐ NUEVO IMPORT
 
 // @desc    Listar todas las áreas
 // @route   GET /api/admin/areas
@@ -90,6 +91,14 @@ export const createArea = async (req, res) => {
       descripcion,
       sede
     });
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'crear_sede',
+      'admin',
+      req.admin.nombre,
+      `Creó área ${nombre}`
+    );
     
     // Obtener área creada con populate
     const areaCreada = await Area.findById(area._id)
@@ -149,6 +158,14 @@ export const updateArea = async (req, res) => {
     if (activo !== undefined) area.activo = activo;
     
     await area.save();
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'actualizar_sede',
+      'admin',
+      req.admin.nombre,
+      `Actualizó área ${area.nombre}`
+    );
     
     const areaActualizada = await Area.findById(area._id)
       .populate('sede', 'nombre ciudad');
@@ -184,6 +201,14 @@ export const deleteArea = async (req, res) => {
     
     area.activo = false;
     await area.save();
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'eliminar_sede',
+      'admin',
+      req.admin.nombre,
+      `Desactivó área ${area.nombre}`
+    );
     
     res.json({
       success: true,
@@ -212,8 +237,18 @@ export const permanentDeleteArea = async (req, res) => {
         msg: 'Área no encontrada' 
       });
     }
+
+    const nombreArea = area.nombre; // Guardar antes de eliminar
     
     await area.deleteOne();
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'eliminar_sede',
+      'admin',
+      req.admin.nombre,
+      `Eliminó permanentemente área ${nombreArea}`
+    );
     
     res.json({
       success: true,

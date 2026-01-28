@@ -3,6 +3,7 @@
 import CargaCombustible from '../models/cargacombustible.js';
 import Vehiculo from '../models/vehiculo.js';
 import mongoose from 'mongoose';
+import registrarActividad from '../utils/activityLogger.js'; // ⭐ NUEVO IMPORT
 
 // @desc    Registrar nueva carga de combustible (ADMIN)
 // @route   POST /api/admin/combustible
@@ -117,6 +118,14 @@ export const registrarCarga = async (req, res) => {
     });
 
     console.log('✅ Carga creada:', nuevaCarga._id);
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'crear_carga_combustible',
+      'admin',
+      req.admin.nombre,
+      `Registró carga de ${litros_cargados} lts de combustible para vehículo ${vehiculo.placa}`
+    );
 
     // Actualizar el vehículo con los datos más recientes
     if (horas_motor_al_momento && horas_motor_al_momento > vehiculo.horas_motor_actual) {
@@ -265,7 +274,8 @@ export const actualizarCarga = async (req, res) => {
       fecha_carga
     } = req.body;
 
-    const carga = await CargaCombustible.findById(req.params.id);
+    const carga = await CargaCombustible.findById(req.params.id)
+      .populate('vehiculo', 'placa numero_economico');
 
     if (!carga) {
       return res.status(404).json({
@@ -285,6 +295,14 @@ export const actualizarCarga = async (req, res) => {
     if (fecha_carga !== undefined) carga.fecha_carga = fecha_carga;
 
     await carga.save();
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'actualizar_carga_combustible',
+      'admin',
+      req.admin.nombre,
+      `Actualizó carga de combustible del vehículo ${carga.vehiculo.placa}`
+    );
 
     // Recalcular rendimiento si cambió horas o litros
     if (litros_cargados !== undefined || horas_motor_al_momento !== undefined) {
@@ -334,7 +352,8 @@ export const actualizarCarga = async (req, res) => {
 // @access  Private (Admin)
 export const eliminarCarga = async (req, res) => {
   try {
-    const carga = await CargaCombustible.findById(req.params.id);
+    const carga = await CargaCombustible.findById(req.params.id)
+      .populate('vehiculo', 'placa numero_economico');
 
     if (!carga) {
       return res.status(404).json({
@@ -344,6 +363,14 @@ export const eliminarCarga = async (req, res) => {
     }
 
     await carga.deleteOne();
+
+    // ⭐ REGISTRAR ACTIVIDAD
+    await registrarActividad(
+      'eliminar_carga_combustible',
+      'admin',
+      req.admin.nombre,
+      `Eliminó carga de combustible del vehículo ${carga.vehiculo.placa}`
+    );
 
     res.status(200).json({
       success: true,
