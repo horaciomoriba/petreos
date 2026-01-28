@@ -14,7 +14,9 @@ const TabCombustible = ({ vehiculo, onUpdate }) => {
   const [cargaAEliminar, setCargaAEliminar] = useState(null);
   const [formData, setFormData] = useState({
     litros_cargados: '',
+    horas_motor_anterior: '',      // ⭐ NUEVO
     horas_motor_al_momento: '',
+    kilometraje_anterior: '',       // ⭐ NUEVO
     kilometraje_al_momento: '',
     costo: '',
     gasolinera: '',
@@ -49,14 +51,58 @@ const TabCombustible = ({ vehiculo, onUpdate }) => {
     }));
   };
 
+  // ⭐ NUEVO: Abrir formulario con valores pre-llenados
+  const handleAbrirForm = () => {
+    // Calcular valores sugeridos
+    let horasAnterior = '';
+    let kmAnterior = '';
+
+    if (cargas.length > 0) {
+      // Si hay cargas previas, usar los valores de la última carga
+      horasAnterior = cargas[0].horas_motor_al_momento;
+      kmAnterior = cargas[0].kilometraje_al_momento || '';
+    } else {
+      // Si no hay cargas, usar los valores actuales del vehículo
+      horasAnterior = vehiculo.horasMotorActual || vehiculo.horas_motor_actual || '';
+      kmAnterior = vehiculo.kilometrajeActual || vehiculo.kilometraje_actual || '';
+    }
+
+    setFormData({
+      litros_cargados: '',
+      horas_motor_anterior: horasAnterior,
+      horas_motor_al_momento: '',
+      kilometraje_anterior: kmAnterior,
+      kilometraje_al_momento: '',
+      costo: '',
+      gasolinera: '',
+      numero_ticket: '',
+      observaciones: ''
+    });
+
+    setMostrarForm(true);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // ⭐ VALIDACIÓN: horas_anterior < horas_actual
+    const horasAnterior = parseFloat(formData.horas_motor_anterior);
+    const horasActual = parseFloat(formData.horas_motor_al_momento);
+    
+    if (horasAnterior > horasActual) {
+      showToast.error('Las horas del motor anterior no pueden ser mayores a las horas actuales');
+      return;
+    }
+
     try {
       await adminCombustibleService.registrarCarga({
         vehiculo_id: vehiculo._id,
         litros_cargados: parseFloat(formData.litros_cargados),
-        horas_motor_al_momento: parseFloat(formData.horas_motor_al_momento),
+        horas_motor_anterior: horasAnterior,  // ⭐ NUEVO
+        horas_motor_al_momento: horasActual,
+        kilometraje_anterior: formData.kilometraje_anterior 
+          ? parseFloat(formData.kilometraje_anterior) 
+          : undefined,
         kilometraje_al_momento: formData.kilometraje_al_momento 
           ? parseFloat(formData.kilometraje_al_momento) 
           : undefined,
@@ -70,7 +116,9 @@ const TabCombustible = ({ vehiculo, onUpdate }) => {
       setMostrarForm(false);
       setFormData({
         litros_cargados: '',
+        horas_motor_anterior: '',
         horas_motor_al_momento: '',
+        kilometraje_anterior: '',
         kilometraje_al_momento: '',
         costo: '',
         gasolinera: '',
@@ -89,7 +137,9 @@ const TabCombustible = ({ vehiculo, onUpdate }) => {
     setMostrarForm(false);
     setFormData({
       litros_cargados: '',
+      horas_motor_anterior: '',
       horas_motor_al_momento: '',
+      kilometraje_anterior: '',
       kilometraje_al_momento: '',
       costo: '',
       gasolinera: '',
@@ -164,7 +214,7 @@ const TabCombustible = ({ vehiculo, onUpdate }) => {
             <div>
               <p className="text-xs text-gray-500">Promedio</p>
               <p className="text-lg font-bold text-gray-900">
-                {estadisticas.consumo_promedio?.toFixed(2)} L/h
+                {estadisticas.consumo_promedio_hora?.toFixed(2)} L/h
               </p>
             </div>
           </div>
@@ -211,106 +261,172 @@ const TabCombustible = ({ vehiculo, onUpdate }) => {
         </div>
       )}
 
-      {/* Formulario de nueva carga - Colapsable */}
+      {/* ⭐ Formulario de nueva carga - ACTUALIZADO */}
       <div className="bg-white rounded-lg border border-gray-200 p-3">
         {!mostrarForm ? (
           <button
-            onClick={() => setMostrarForm(true)}
+            onClick={handleAbrirForm}
             className="w-full text-left px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded transition-colors"
           >
             + Nueva carga
           </button>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">Litros*</label>
-                <input
-                  type="number"
-                  name="litros_cargados"
-                  value={formData.litros_cargados}
-                  onChange={handleChange}
-                  required
-                  min="0.1"
-                  step="0.1"
-                  className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-gray-900"
-                  placeholder="50"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">Horas motor*</label>
-                <input
-                  type="number"
-                  name="horas_motor_al_momento"
-                  value={formData.horas_motor_al_momento}
-                  onChange={handleChange}
-                  required
-                  min="0"
-                  step="0.1"
-                  className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-gray-900"
-                  placeholder="1250"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">Kilometraje</label>
-                <input
-                  type="number"
-                  name="kilometraje_al_momento"
-                  value={formData.kilometraje_al_momento}
-                  onChange={handleChange}
-                  min="0"
-                  step="0.1"
-                  className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-gray-900"
-                  placeholder="15000"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">Costo</label>
-                <input
-                  type="number"
-                  name="costo"
-                  value={formData.costo}
-                  onChange={handleChange}
-                  min="0"
-                  step="0.01"
-                  className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-gray-900"
-                  placeholder="1500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">Gasolinera</label>
-                <input
-                  type="text"
-                  name="gasolinera"
-                  value={formData.gasolinera}
-                  onChange={handleChange}
-                  className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-gray-900"
-                  placeholder="Shell"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">Ticket</label>
-                <input
-                  type="text"
-                  name="numero_ticket"
-                  value={formData.numero_ticket}
-                  onChange={handleChange}
-                  className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-gray-900"
-                  placeholder="A-123"
-                />
-              </div>
-              <div className="col-span-2">
-                <label className="block text-xs text-gray-600 mb-1">Observaciones</label>
-                <input
-                  type="text"
-                  name="observaciones"
-                  value={formData.observaciones}
-                  onChange={handleChange}
-                  className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-gray-900"
-                  placeholder="Notas..."
-                />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Alerta informativa */}
+            <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+              <div className="flex items-start gap-2">
+                <svg className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-xs text-blue-700">
+                  Registra las horas/km al inicio y al final del periodo de trabajo entre cargas
+                </p>
               </div>
             </div>
+
+            {/* Rango de horas - OBLIGATORIO */}
+            <div>
+              <p className="text-xs font-semibold text-gray-900 mb-2">Horas del motor</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">
+                    Horas anteriores <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    name="horas_motor_anterior"
+                    value={formData.horas_motor_anterior}
+                    onChange={handleChange}
+                    required
+                    min="0"
+                    step="0.1"
+                    className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-gray-900"
+                    placeholder="1200"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Al inicio</p>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">
+                    Horas actuales <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    name="horas_motor_al_momento"
+                    value={formData.horas_motor_al_momento}
+                    onChange={handleChange}
+                    required
+                    min="0"
+                    step="0.1"
+                    className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-gray-900"
+                    placeholder="1250"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Al cargar</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Rango de kilometraje - OPCIONAL */}
+            <div>
+              <p className="text-xs font-semibold text-gray-900 mb-2">Kilometraje (opcional)</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Km anterior</label>
+                  <input
+                    type="number"
+                    name="kilometraje_anterior"
+                    value={formData.kilometraje_anterior}
+                    onChange={handleChange}
+                    min="0"
+                    step="0.1"
+                    className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-gray-900"
+                    placeholder="14500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Km actual</label>
+                  <input
+                    type="number"
+                    name="kilometraje_al_momento"
+                    value={formData.kilometraje_al_momento}
+                    onChange={handleChange}
+                    min="0"
+                    step="0.1"
+                    className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-gray-900"
+                    placeholder="15000"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Litros y detalles */}
+            <div>
+              <p className="text-xs font-semibold text-gray-900 mb-2">Detalles de la carga</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">
+                    Litros <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    name="litros_cargados"
+                    value={formData.litros_cargados}
+                    onChange={handleChange}
+                    required
+                    min="0.1"
+                    step="0.1"
+                    className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-gray-900"
+                    placeholder="50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Costo</label>
+                  <input
+                    type="number"
+                    name="costo"
+                    value={formData.costo}
+                    onChange={handleChange}
+                    min="0"
+                    step="0.01"
+                    className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-gray-900"
+                    placeholder="1500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Gasolinera</label>
+                  <input
+                    type="text"
+                    name="gasolinera"
+                    value={formData.gasolinera}
+                    onChange={handleChange}
+                    className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-gray-900"
+                    placeholder="Shell"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Ticket</label>
+                  <input
+                    type="text"
+                    name="numero_ticket"
+                    value={formData.numero_ticket}
+                    onChange={handleChange}
+                    className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-gray-900"
+                    placeholder="A-123"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs text-gray-600 mb-1">Observaciones</label>
+                  <input
+                    type="text"
+                    name="observaciones"
+                    value={formData.observaciones}
+                    onChange={handleChange}
+                    className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-gray-900"
+                    placeholder="Notas..."
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="flex gap-2">
               <button 
                 type="submit" 
@@ -330,7 +446,7 @@ const TabCombustible = ({ vehiculo, onUpdate }) => {
         )}
       </div>
 
-      {/* Tabla de cargas - Estilo Excel */}
+      {/* ⭐ Tabla de cargas - ACTUALIZADA con nuevas columnas */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
           <div className="relative">
@@ -350,9 +466,10 @@ const TabCombustible = ({ vehiculo, onUpdate }) => {
                 <tr className="bg-gray-50 border-b border-gray-200">
                   <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">Fecha</th>
                   <th className="px-3 py-2 text-right text-xs font-semibold text-gray-700">Litros</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-700">Hrs Motor</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-700">Km</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-700">Hrs Rango</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-700">Hrs Trab.</th>
                   <th className="px-3 py-2 text-right text-xs font-semibold text-gray-700">L/h</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-700">Km Rango</th>
                   <th className="px-3 py-2 text-right text-xs font-semibold text-gray-700">Costo</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">Gasolinera</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">Registró</th>
@@ -369,10 +486,16 @@ const TabCombustible = ({ vehiculo, onUpdate }) => {
                       {carga.litros_cargados}
                     </td>
                     <td className="px-3 py-2 text-xs text-gray-600 text-right">
-                      {carga.horas_motor_al_momento}
+                      {carga.horas_motor_anterior !== undefined ? (
+                        <span className="text-gray-500">
+                          {carga.horas_motor_anterior} → {carga.horas_motor_al_momento}
+                        </span>
+                      ) : (
+                        carga.horas_motor_al_momento
+                      )}
                     </td>
                     <td className="px-3 py-2 text-xs text-gray-600 text-right">
-                      {carga.kilometraje_al_momento?.toLocaleString() || '-'}
+                      {carga.rendimiento?.horas_trabajadas || '-'}
                     </td>
                     <td className="px-3 py-2 text-xs text-right">
                       {carga.rendimiento?.calculado ? (
@@ -381,6 +504,17 @@ const TabCombustible = ({ vehiculo, onUpdate }) => {
                         </span>
                       ) : (
                         <span className="text-gray-400">-</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-xs text-gray-600 text-right">
+                      {carga.kilometraje_anterior !== undefined && carga.kilometraje_al_momento ? (
+                        <span className="text-gray-500">
+                          {carga.kilometraje_anterior.toLocaleString()} → {carga.kilometraje_al_momento.toLocaleString()}
+                        </span>
+                      ) : carga.kilometraje_al_momento ? (
+                        carga.kilometraje_al_momento.toLocaleString()
+                      ) : (
+                        '-'
                       )}
                     </td>
                     <td className="px-3 py-2 text-xs text-gray-900 text-right">

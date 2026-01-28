@@ -3,7 +3,7 @@
 import CargaCombustible from '../models/cargacombustible.js';
 import Vehiculo from '../models/vehiculo.js';
 import mongoose from 'mongoose';
-import registrarActividad from '../utils/activityLogger.js'; // ⭐ NUEVO IMPORT
+import registrarActividad from '../utils/activityLogger.js';
 
 // @desc    Registrar nueva carga de combustible (ADMIN)
 // @route   POST /api/admin/combustible
@@ -13,7 +13,9 @@ export const registrarCarga = async (req, res) => {
     const {
       vehiculo_id,
       litros_cargados,
+      horas_motor_anterior,
       horas_motor_al_momento,
+      kilometraje_anterior,
       kilometraje_al_momento,
       costo,
       gasolinera,
@@ -22,11 +24,7 @@ export const registrarCarga = async (req, res) => {
       fecha_carga
     } = req.body;
 
-    // DEBUG: Ver estructura de req.user
-    console.log('🔍 DEBUG Admin req.user:', req.user);
-    console.log('🔍 DEBUG Admin req.admin:', req.admin);
-
-    // Validar autenticación - Intentar múltiples fuentes
+    // Validar autenticación
     const userSource = req.admin || req.user;
     
     if (!userSource) {
@@ -36,19 +34,15 @@ export const registrarCarga = async (req, res) => {
       });
     }
 
-    // Obtener ID y nombre del usuario
     const userId = userSource._id || userSource.id;
     const userName = userSource.nombre || userSource.name || userSource.username || 'Admin';
 
     if (!userId) {
-      console.error('❌ Error: No se encontró ID de usuario en req.user ni req.admin');
       return res.status(400).json({
         success: false,
         message: 'Error de autenticación: ID de usuario no encontrado'
       });
     }
-
-    console.log('✅ Usuario identificado:', { userId, userName });
 
     // Validaciones básicas
     if (!vehiculo_id) {
@@ -65,10 +59,25 @@ export const registrarCarga = async (req, res) => {
       });
     }
 
+    if (horas_motor_anterior === undefined || horas_motor_anterior === null) {
+      return res.status(400).json({
+        success: false,
+        message: 'Las horas del motor anterior son obligatorias'
+      });
+    }
+
     if (!horas_motor_al_momento || horas_motor_al_momento < 0) {
       return res.status(400).json({
         success: false,
-        message: 'Las horas del motor son obligatorias y deben ser positivas'
+        message: 'Las horas del motor al momento son obligatorias'
+      });
+    }
+
+    // ⭐ NUEVA VALIDACIÓN: horas_anterior < horas_actual
+    if (horas_motor_anterior > horas_motor_al_momento) {
+      return res.status(400).json({
+        success: false,
+        message: 'Las horas del motor anterior no pueden ser mayores a las horas actuales'
       });
     }
 
@@ -81,29 +90,16 @@ export const registrarCarga = async (req, res) => {
       });
     }
 
-    // Validar que las horas no sean menores a la última carga
-    const ultimaCarga = await CargaCombustible.findOne({
-      vehiculo: vehiculo_id
-    })
-    .sort({ fecha_carga: -1 })
-    .select('horas_motor_al_momento fecha_carga');
-
-    if (ultimaCarga && horas_motor_al_momento < ultimaCarga.horas_motor_al_momento) {
-      return res.status(400).json({
-        success: false,
-        message: `Las horas del motor no pueden ser menores a la última carga registrada (${ultimaCarga.horas_motor_al_momento} hrs el ${new Date(ultimaCarga.fecha_carga).toLocaleDateString()})`
-      });
-    }
-
-    // CORRECCIÓN: Obtener tipo_combustible correctamente
     const tipoCombustible = vehiculo.tipo_combustible || vehiculo.tipoCombustible || 'diesel';
 
-    // Crear la carga
+    // Crear la carga (sin actualizar vehículo)
     const nuevaCarga = await CargaCombustible.create({
       vehiculo: vehiculo_id,
       fecha_carga: fecha_carga || Date.now(),
       litros_cargados,
+      horas_motor_anterior,
       horas_motor_al_momento,
+      kilometraje_anterior,
       kilometraje_al_momento,
       tipo_combustible: tipoCombustible,
       costo,
@@ -119,24 +115,13 @@ export const registrarCarga = async (req, res) => {
 
     console.log('✅ Carga creada:', nuevaCarga._id);
 
-    // ⭐ REGISTRAR ACTIVIDAD
+    // Registrar actividad
     await registrarActividad(
       'crear_carga_combustible',
       'admin',
-      req.admin.nombre,
+      userName,
       `Registró carga de ${litros_cargados} lts de combustible para vehículo ${vehiculo.placa}`
     );
-
-    // Actualizar el vehículo con los datos más recientes
-    if (horas_motor_al_momento && horas_motor_al_momento > vehiculo.horas_motor_actual) {
-      vehiculo.horas_motor_actual = horas_motor_al_momento;
-    }
-
-    if (kilometraje_al_momento && kilometraje_al_momento > vehiculo.kilometraje_actual) {
-      vehiculo.kilometraje_actual = kilometraje_al_momento;
-    }
-
-    await vehiculo.save();
 
     // Populate para respuesta
     await nuevaCarga.populate('vehiculo', 'placa numero_economico marca modelo tipo_vehiculo');
@@ -265,7 +250,9 @@ export const actualizarCarga = async (req, res) => {
   try {
     const {
       litros_cargados,
+      horas_motor_anterior,
       horas_motor_al_momento,
+      kilometraje_anterior,
       kilometraje_al_momento,
       costo,
       gasolinera,
@@ -286,7 +273,9 @@ export const actualizarCarga = async (req, res) => {
 
     // Actualizar campos permitidos
     if (litros_cargados !== undefined) carga.litros_cargados = litros_cargados;
+    if (horas_motor_anterior !== undefined) carga.horas_motor_anterior = horas_motor_anterior;
     if (horas_motor_al_momento !== undefined) carga.horas_motor_al_momento = horas_motor_al_momento;
+    if (kilometraje_anterior !== undefined) carga.kilometraje_anterior = kilometraje_anterior;
     if (kilometraje_al_momento !== undefined) carga.kilometraje_al_momento = kilometraje_al_momento;
     if (costo !== undefined) carga.costo = costo;
     if (gasolinera !== undefined) carga.gasolinera = gasolinera;
@@ -294,40 +283,24 @@ export const actualizarCarga = async (req, res) => {
     if (observaciones !== undefined) carga.observaciones = observaciones;
     if (fecha_carga !== undefined) carga.fecha_carga = fecha_carga;
 
+    // Validar que horas_anterior < horas_actual
+    if (carga.horas_motor_anterior > carga.horas_motor_al_momento) {
+      return res.status(400).json({
+        success: false,
+        message: 'Las horas del motor anterior no pueden ser mayores a las horas actuales'
+      });
+    }
+
     await carga.save();
 
-    // ⭐ REGISTRAR ACTIVIDAD
+    // Registrar actividad
+    const userName = req.admin?.nombre || req.user?.nombre || 'Admin';
     await registrarActividad(
       'actualizar_carga_combustible',
       'admin',
-      req.admin.nombre,
+      userName,
       `Actualizó carga de combustible del vehículo ${carga.vehiculo.placa}`
     );
-
-    // Recalcular rendimiento si cambió horas o litros
-    if (litros_cargados !== undefined || horas_motor_al_momento !== undefined) {
-      await carga.recalcularRendimiento();
-    }
-
-    // Actualizar el vehículo si se modificaron las horas o kilometraje
-    const vehiculo = await Vehiculo.findById(carga.vehiculo);
-    if (vehiculo) {
-      let vehiculoActualizado = false;
-
-      if (horas_motor_al_momento !== undefined && horas_motor_al_momento > vehiculo.horas_motor_actual) {
-        vehiculo.horas_motor_actual = horas_motor_al_momento;
-        vehiculoActualizado = true;
-      }
-
-      if (kilometraje_al_momento !== undefined && kilometraje_al_momento > vehiculo.kilometraje_actual) {
-        vehiculo.kilometraje_actual = kilometraje_al_momento;
-        vehiculoActualizado = true;
-      }
-
-      if (vehiculoActualizado) {
-        await vehiculo.save();
-      }
-    }
 
     await carga.populate('vehiculo', 'placa numero_economico marca modelo');
 
@@ -364,11 +337,12 @@ export const eliminarCarga = async (req, res) => {
 
     await carga.deleteOne();
 
-    // ⭐ REGISTRAR ACTIVIDAD
+    // Registrar actividad
+    const userName = req.admin?.nombre || req.user?.nombre || 'Admin';
     await registrarActividad(
       'eliminar_carga_combustible',
       'admin',
-      req.admin.nombre,
+      userName,
       `Eliminó carga de combustible del vehículo ${carga.vehiculo.placa}`
     );
 
@@ -411,11 +385,20 @@ export const getEstadisticasGenerales = async (req, res) => {
           total_litros: { $sum: '$litros_cargados' },
           total_costo: { $sum: '$costo' },
           total_cargas: { $sum: 1 },
-          consumo_promedio: { 
+          consumo_promedio_hora: { 
             $avg: {
               $cond: [
                 { $eq: ['$rendimiento.calculado', true] },
                 '$rendimiento.consumo_por_hora',
+                null
+              ]
+            }
+          },
+          consumo_promedio_km: { 
+            $avg: {
+              $cond: [
+                { $eq: ['$rendimiento.calculado', true] },
+                '$rendimiento.consumo_por_km',
                 null
               ]
             }
@@ -492,7 +475,8 @@ export const getEstadisticasGenerales = async (req, res) => {
           total_litros: 0,
           total_costo: 0,
           total_cargas: 0,
-          consumo_promedio: 0
+          consumo_promedio_hora: 0,
+          consumo_promedio_km: 0
         },
         top_consumidores: topConsumidores,
         consumo_por_mes: consumoPorMes

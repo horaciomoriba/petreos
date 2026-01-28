@@ -23,7 +23,9 @@ const MiVehiculo = () => {
   const [mostrarFormCombustible, setMostrarFormCombustible] = useState(false);
   const [formCombustible, setFormCombustible] = useState({
     litros_cargados: '',
+    horas_motor_anterior: '',  // ⭐ NUEVO
     horas_motor_al_momento: '',
+    kilometraje_anterior: '',   // ⭐ NUEVO
     kilometraje_al_momento: '',
     costo: '',
     gasolinera: '',
@@ -99,6 +101,31 @@ const MiVehiculo = () => {
     setEditMode(false);
   };
 
+  // ⭐ HANDLER ACTUALIZADO: Pre-llena con valores sugeridos
+  const handleAbrirFormCombustible = async () => {
+    try {
+      const response = await operadorCombustibleService.getInfoVehiculoParaCarga();
+      
+      // Pre-llenar con valores sugeridos
+      setFormCombustible({
+        litros_cargados: '',
+        horas_motor_anterior: response.valores_sugeridos?.horas_motor_anterior || '',
+        horas_motor_al_momento: '',
+        kilometraje_anterior: response.valores_sugeridos?.kilometraje_anterior || '',
+        kilometraje_al_momento: '',
+        costo: '',
+        gasolinera: '',
+        numero_ticket: '',
+        observaciones: ''
+      });
+      
+      setMostrarFormCombustible(true);
+    } catch (error) {
+      console.error('Error al obtener info del vehículo:', error);
+      showToast.error('Error al cargar información del vehículo');
+    }
+  };
+
   // Handlers para combustible
   const handleChangeCombustible = (e) => {
     const { name, value } = e.target;
@@ -108,17 +135,26 @@ const MiVehiculo = () => {
     }));
   };
 
-  const handleAbrirFormCombustible = () => {
-    setMostrarFormCombustible(true);
-  };
-
   const handleSubmitCombustible = async (e) => {
     e.preventDefault();
+    
+    // ⭐ VALIDACIÓN: horas_anterior < horas_actual
+    const horasAnterior = parseFloat(formCombustible.horas_motor_anterior);
+    const horasActual = parseFloat(formCombustible.horas_motor_al_momento);
+    
+    if (horasAnterior > horasActual) {
+      showToast.error('Las horas del motor anterior no pueden ser mayores a las horas actuales');
+      return;
+    }
     
     try {
       await operadorCombustibleService.registrarCarga({
         litros_cargados: parseFloat(formCombustible.litros_cargados),
-        horas_motor_al_momento: parseFloat(formCombustible.horas_motor_al_momento),
+        horas_motor_anterior: horasAnterior,  // ⭐ NUEVO
+        horas_motor_al_momento: horasActual,
+        kilometraje_anterior: formCombustible.kilometraje_anterior 
+          ? parseFloat(formCombustible.kilometraje_anterior) 
+          : undefined,
         kilometraje_al_momento: formCombustible.kilometraje_al_momento 
           ? parseFloat(formCombustible.kilometraje_al_momento) 
           : undefined,
@@ -131,12 +167,13 @@ const MiVehiculo = () => {
       showToast.success('Carga de combustible registrada');
       setMostrarFormCombustible(false);
       loadCargasCombustible();
-      loadVehiculo(); // Recargar vehículo para actualizar datos
       
       // Resetear form
       setFormCombustible({
         litros_cargados: '',
+        horas_motor_anterior: '',
         horas_motor_al_momento: '',
+        kilometraje_anterior: '',
         kilometraje_al_momento: '',
         costo: '',
         gasolinera: '',
@@ -153,7 +190,9 @@ const MiVehiculo = () => {
     setMostrarFormCombustible(false);
     setFormCombustible({
       litros_cargados: '',
+      horas_motor_anterior: '',
       horas_motor_al_momento: '',
+      kilometraje_anterior: '',
       kilometraje_al_momento: '',
       costo: '',
       gasolinera: '',
@@ -419,7 +458,7 @@ const MiVehiculo = () => {
               </div>
             </div>
 
-            {/* Cargas de Combustible - REDISEÑADO */}
+            {/* ⭐ Cargas de Combustible - ACTUALIZADO */}
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-200">
                 <div className="flex items-center justify-between">
@@ -444,30 +483,49 @@ const MiVehiculo = () => {
               <div className="p-6">
                 {mostrarFormCombustible ? (
                   <form onSubmit={handleSubmitCombustible} className="space-y-5">
-                    {/* Campos Obligatorios */}
+                    
+                    {/* ⭐ NUEVA SECCIÓN: Rango de horas/km */}
+                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="text-xs font-semibold text-blue-900 mb-1">Rango de trabajo</h4>
+                          <p className="text-xs text-blue-700">
+                            Registra las horas/km al inicio y al final del periodo de trabajo entre cargas
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Horas del motor (rango) */}
                     <div>
-                      <div className="text-xs font-semibold text-gray-900 mb-3">Datos principales</div>
+                      <div className="text-xs font-semibold text-gray-900 mb-3">Horas del motor</div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-xs font-medium text-gray-700 mb-2">
-                            Litros cargados
+                            Horas anteriores <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="number"
-                            name="litros_cargados"
-                            value={formCombustible.litros_cargados}
+                            name="horas_motor_anterior"
+                            value={formCombustible.horas_motor_anterior}
                             onChange={handleChangeCombustible}
                             required
-                            min="0.1"
+                            min="0"
                             step="0.1"
                             className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                            placeholder="50.5"
+                            placeholder="1200"
                           />
+                          <p className="text-xs text-gray-500 mt-1.5">Al inicio del periodo</p>
                         </div>
 
                         <div>
                           <label className="block text-xs font-medium text-gray-700 mb-2">
-                            Horas del motor
+                            Horas actuales <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="number"
@@ -480,17 +538,34 @@ const MiVehiculo = () => {
                             className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                             placeholder="1250"
                           />
+                          <p className="text-xs text-gray-500 mt-1.5">Al momento de cargar</p>
                         </div>
                       </div>
                     </div>
 
-                    {/* Campos Opcionales */}
+                    {/* Kilometraje (rango) - opcional */}
                     <div>
-                      <div className="text-xs font-semibold text-gray-900 mb-3">Información adicional</div>
+                      <div className="text-xs font-semibold text-gray-900 mb-3">Kilometraje (opcional)</div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-xs font-medium text-gray-700 mb-2">
-                            Kilometraje
+                            Kilometraje anterior
+                          </label>
+                          <input
+                            type="number"
+                            name="kilometraje_anterior"
+                            value={formCombustible.kilometraje_anterior}
+                            onChange={handleChangeCombustible}
+                            min="0"
+                            step="0.1"
+                            className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                            placeholder="14500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-2">
+                            Kilometraje actual
                           </label>
                           <input
                             type="number"
@@ -501,6 +576,29 @@ const MiVehiculo = () => {
                             step="0.1"
                             className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                             placeholder="15000"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Litros y detalles */}
+                    <div>
+                      <div className="text-xs font-semibold text-gray-900 mb-3">Detalles de la carga</div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-2">
+                            Litros cargados <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="number"
+                            name="litros_cargados"
+                            value={formCombustible.litros_cargados}
+                            onChange={handleChangeCombustible}
+                            required
+                            min="0.1"
+                            step="0.1"
+                            className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                            placeholder="50.5"
                           />
                         </div>
 
@@ -638,6 +736,14 @@ const MiVehiculo = () => {
                                 <span className="font-medium text-gray-900">{carga.horas_motor_al_momento}</span>
                                 <span>hrs</span>
                               </div>
+                              
+                              {carga.rendimiento?.horas_trabajadas > 0 && (
+                                <div className="flex items-center gap-1.5 text-gray-600">
+                                  <span className="text-gray-500">Trabajadas:</span>
+                                  <span className="font-medium text-gray-900">{carga.rendimiento.horas_trabajadas}</span>
+                                  <span>hrs</span>
+                                </div>
+                              )}
                               
                               {carga.costo && (
                                 <div className="flex items-center gap-1.5 text-gray-600">

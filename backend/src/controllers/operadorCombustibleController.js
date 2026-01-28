@@ -2,7 +2,7 @@
 
 import CargaCombustible from '../models/cargacombustible.js';
 import Vehiculo from '../models/vehiculo.js';
-import registrarActividad from '../utils/activityLogger.js'; // ⭐ NUEVO IMPORT
+import registrarActividad from '../utils/activityLogger.js';
 
 // @desc    Registrar nueva carga de combustible (OPERADOR)
 // @route   POST /api/operador/combustible
@@ -11,7 +11,9 @@ export const registrarCarga = async (req, res) => {
   try {
     const {
       litros_cargados,
+      horas_motor_anterior,
       horas_motor_al_momento,
+      kilometraje_anterior,
       kilometraje_al_momento,
       costo,
       gasolinera,
@@ -20,7 +22,7 @@ export const registrarCarga = async (req, res) => {
       fecha_carga
     } = req.body;
 
-    // Validar que req.operador exista (viene del middleware protectOperador)
+    // Validar que req.operador exista
     if (!req.operador) {
       return res.status(401).json({
         success: false,
@@ -46,37 +48,38 @@ export const registrarCarga = async (req, res) => {
       });
     }
 
+    if (horas_motor_anterior === undefined || horas_motor_anterior === null) {
+      return res.status(400).json({
+        success: false,
+        message: 'Las horas del motor anterior son obligatorias'
+      });
+    }
+
     if (!horas_motor_al_momento || horas_motor_al_momento < 0) {
       return res.status(400).json({
         success: false,
-        message: 'Las horas del motor son obligatorias y deben ser positivas'
+        message: 'Las horas del motor al momento son obligatorias'
       });
     }
 
-    // Validar que las horas no sean menores a la última carga
-    const ultimaCarga = await CargaCombustible.findOne({
-      vehiculo: vehiculo._id
-    })
-    .sort({ fecha_carga: -1 })
-    .select('horas_motor_al_momento');
-
-    if (ultimaCarga && horas_motor_al_momento < ultimaCarga.horas_motor_al_momento) {
+    // ⭐ NUEVA VALIDACIÓN: horas_anterior < horas_actual
+    if (horas_motor_anterior > horas_motor_al_momento) {
       return res.status(400).json({
         success: false,
-        message: `Las horas del motor no pueden ser menores a la última carga registrada (${ultimaCarga.horas_motor_al_momento} hrs)`
+        message: 'Las horas del motor anterior no pueden ser mayores a las horas actuales'
       });
     }
 
-    // CORRECCIÓN: Obtener tipo_combustible correctamente
-    // Manejar tanto camelCase como snake_case
     const tipoCombustible = vehiculo.tipo_combustible || vehiculo.tipoCombustible || 'diesel';
 
-    // Crear la carga
+    // Crear la carga (sin actualizar vehículo)
     const nuevaCarga = await CargaCombustible.create({
       vehiculo: vehiculo._id,
       fecha_carga: fecha_carga || Date.now(),
       litros_cargados,
+      horas_motor_anterior,
       horas_motor_al_momento,
+      kilometraje_anterior,
       kilometraje_al_momento,
       tipo_combustible: tipoCombustible,
       costo,
@@ -90,24 +93,13 @@ export const registrarCarga = async (req, res) => {
       }
     });
 
-    // ⭐ REGISTRAR ACTIVIDAD
+    // Registrar actividad
     await registrarActividad(
       'crear_carga_combustible',
       'operador',
       req.operador.nombre,
       `Registró carga de ${litros_cargados} lts de combustible para vehículo ${vehiculo.placa}`
     );
-
-    // Actualizar el vehículo con los datos más recientes
-    if (horas_motor_al_momento && horas_motor_al_momento > vehiculo.horas_motor_actual) {
-      vehiculo.horas_motor_actual = horas_motor_al_momento;
-    }
-
-    if (kilometraje_al_momento && kilometraje_al_momento > vehiculo.kilometraje_actual) {
-      vehiculo.kilometraje_actual = kilometraje_al_momento;
-    }
-
-    await vehiculo.save();
 
     // Populate para respuesta
     await nuevaCarga.populate('vehiculo', 'placa numero_economico marca modelo');
@@ -213,15 +205,21 @@ export const getInfoVehiculoParaCarga = async (req, res) => {
       });
     }
 
-    // Obtener última carga para contexto
+    // Obtener última carga para sugerir valores
     const ultimaCarga = await CargaCombustible.findOne({
       vehiculo: vehiculo._id
     })
     .sort({ fecha_carga: -1 })
-    .select('fecha_carga litros_cargados horas_motor_al_momento rendimiento');
+    .select('fecha_carga litros_cargados horas_motor_al_momento kilometraje_al_momento rendimiento');
 
     // Manejar tipo_combustible en ambos formatos
     const tipoCombustible = vehiculo.tipo_combustible || vehiculo.tipoCombustible;
+
+    // ⭐ Sugerir valores para el formulario basados en la última carga
+    const valoresSugeridos = {
+      horas_motor_anterior: ultimaCarga?.horas_motor_al_momento || vehiculo.horas_motor_actual || 0,
+      kilometraje_anterior: ultimaCarga?.kilometraje_al_momento || vehiculo.kilometraje_actual || 0
+    };
 
     res.status(200).json({
       success: true,
@@ -234,7 +232,8 @@ export const getInfoVehiculoParaCarga = async (req, res) => {
         tipo_combustible: tipoCombustible,
         capacidad_tanque: vehiculo.capacidad_tanque
       },
-      ultima_carga: ultimaCarga || null
+      ultima_carga: ultimaCarga || null,
+      valores_sugeridos: valoresSugeridos
     });
 
   } catch (error) {
