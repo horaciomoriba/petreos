@@ -23,6 +23,8 @@ import actividadRoutes from './routes/actividadRoutes.js';
 import operadorCombustibleRoutes from './routes/operadorCombustibleRoutes.js';
 import adminCombustibleRoutes from './routes/adminCombustibleRoutes.js';
 
+import chatRoutes from './routes/chatRoutes.js';
+
 import mongoose from 'mongoose';
 
 // Cargar variables de entorno
@@ -67,6 +69,7 @@ app.use('/api/actividades', actividadRoutes);
 // ===== RUTAS DE OPERADOR =====
 app.use('/api/operador', operadorRoutes);
 app.use('/api/operador/combustible', operadorCombustibleRoutes);
+app.use('/api/chat', chatRoutes);
 
 app.use('/uploads', express.static('uploads'));
 
