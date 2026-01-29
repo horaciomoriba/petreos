@@ -28,7 +28,17 @@ import chatRoutes from './routes/chatRoutes.js';
 import mongoose from 'mongoose';
 
 // Cargar variables de entorno
-dotenv.config();
+
+
+// ========================================
+// VALIDAR API KEY
+// ========================================
+if (!process.env.OPENAI_API_KEY) {
+  console.error('❌ ERROR: OPENAI_API_KEY no encontrada en .env');
+  throw new Error('OPENAI_API_KEY no está configurada');
+}
+
+console.log('✅ OpenAI API Key cargada correctamente');
 
 // Inicializar Express
 const app = express();
@@ -72,6 +82,8 @@ app.use('/api/operador/combustible', operadorCombustibleRoutes);
 app.use('/api/chat', chatRoutes);
 
 app.use('/uploads', express.static('uploads'));
+
+
 
 
 // Manejador de rutas no encontradas

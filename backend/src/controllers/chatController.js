@@ -1,3 +1,25 @@
+// ========================================
+// CARGAR DOTENV AQUÍ DIRECTAMENTE ⭐⭐⭐
+// ========================================
+import dotenv from 'dotenv';
+dotenv.config();
+
+// ========================================
+// VALIDAR QUE EXISTA LA API KEY
+// ========================================
+if (!process.env.OPENAI_API_KEY) {
+  console.error('❌ ERROR: OPENAI_API_KEY no encontrada en .env');
+  console.error('Verifica que el archivo .env existe en: backend/.env');
+  console.error('Y que contiene: OPENAI_API_KEY=sk-...');
+  throw new Error('OPENAI_API_KEY no está configurada');
+}
+
+console.log('✅ [chatController] OpenAI API Key cargada correctamente');
+
+// ========================================
+// AHORA SÍ, IMPORTS
+// ========================================
+
 import OpenAI from 'openai';
 import Vehiculo from '../models/vehiculo.js';
 import Revision from '../models/revision.js';
@@ -9,6 +31,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
+console.log('✅ [chatController] OpenAI inicializado correctamente');
 // ============================================
 // FUNCIONES DISPONIBLES PARA EL CHATBOT
 // ============================================
