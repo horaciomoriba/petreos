@@ -17,23 +17,50 @@ if (!process.env.OPENAI_API_KEY) {
 console.log('✅ [chatController] OpenAI API Key cargada correctamente');
 
 // ========================================
-// AHORA SÍ, IMPORTS
+// IMPORTS
 // ========================================
-
 import OpenAI from 'openai';
 import Vehiculo from '../models/vehiculo.js';
 import Revision from '../models/revision.js';
 import User from '../models/user.js';
 import Reparacion from '../models/reparacion.js';
 import CargaCombustible from '../models/cargacombustible.js';
+import path from 'path';
+import fs from 'fs';
+import ExcelJS from 'exceljs';
 
+// ========================================
+// INICIALIZAR OPENAI
+// ========================================
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
 console.log('✅ [chatController] OpenAI inicializado correctamente');
+
 // ============================================
-// FUNCIONES DISPONIBLES PARA EL CHATBOT
+// UTILIDADES
+// ============================================
+
+// Asegurar que existan las carpetas de reportes
+function ensureReportDirectories() {
+  const baseDir = './uploads/reports';
+  const dirs = [
+    baseDir,
+    `${baseDir}/excel`,
+    `${baseDir}/pdf`,
+    `${baseDir}/csv`
+  ];
+
+  dirs.forEach(dir => {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+  });
+}
+
+// ============================================
+// FUNCIONES DE CONSULTA (Ya existentes)
 // ============================================
 
 // Obtener estadísticas generales de la flota
@@ -246,6 +273,300 @@ async function getConsumosCombustible(dias = 30) {
 }
 
 // ============================================
+// FUNCIONES DE GENERACIÓN DE REPORTES
+// ============================================
+
+// Generar reporte Excel de Revisiones
+async function generateExcelRevisiones(params = {}) {
+  try {
+    ensureReportDirectories();
+
+    const { mes, año, vehiculo } = params;
+    
+    // Construir query
+    const query = {};
+    if (mes && año) {
+      const mesNum = {
+        'enero': 0, 'febrero': 1, 'marzo': 2, 'abril': 3,
+        'mayo': 4, 'junio': 5, 'julio': 6, 'agosto': 7,
+        'septiembre': 8, 'octubre': 9, 'noviembre': 10, 'diciembre': 11
+      }[mes.toLowerCase()] || new Date().getMonth();
+      
+      const añoNum = año || new Date().getFullYear();
+      
+      const startDate = new Date(añoNum, mesNum, 1);
+      const endDate = new Date(añoNum, mesNum + 1, 0);
+      query.fecha = { $gte: startDate, $lte: endDate };
+    }
+    
+    if (vehiculo) {
+      const vehiculoDoc = await Vehiculo.findOne({ 
+        $or: [
+          { placa: { $regex: vehiculo, $options: 'i' } },
+          { numero_economico: { $regex: vehiculo, $options: 'i' } }
+        ]
+      });
+      if (vehiculoDoc) {
+        query.vehiculo = vehiculoDoc._id;
+      }
+    }
+
+    // Obtener revisiones
+    const revisiones = await Revision.find(query)
+      .populate('vehiculo', 'placa numero_economico marca modelo')
+      .populate('tipo_revision', 'nombre frecuencia')
+      .sort({ fecha: -1 })
+      .limit(500)
+      .lean();
+
+    // Crear Excel
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Revisiones');
+
+    // Headers
+    worksheet.columns = [
+      { header: 'Fecha', key: 'fecha', width: 12 },
+      { header: 'Placa', key: 'placa', width: 12 },
+      { header: 'No. Económico', key: 'numero_economico', width: 15 },
+      { header: 'Tipo Revisión', key: 'tipo', width: 20 },
+      { header: 'Frecuencia', key: 'frecuencia', width: 12 },
+      { header: 'Operador', key: 'operador', width: 25 },
+      { header: 'Estado', key: 'estado', width: 12 },
+      { header: 'Aprobada', key: 'aprobada', width: 10 },
+      { header: 'Problemas', key: 'problemas', width: 10 },
+      { header: 'Km', key: 'kilometraje', width: 10 },
+      { header: 'Hrs Motor', key: 'horas_motor', width: 10 }
+    ];
+
+    // Estilo del header
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF1F2937' }
+    };
+    worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+
+    // Agregar datos
+    revisiones.forEach(rev => {
+      worksheet.addRow({
+        fecha: new Date(rev.fecha).toLocaleDateString('es-MX'),
+        placa: rev.vehiculo?.placa || '-',
+        numero_economico: rev.vehiculo?.numero_economico || '-',
+        tipo: rev.tipo_revision?.nombre || '-',
+        frecuencia: rev.frecuencia || '-',
+        operador: rev.operador?.nombre || '-',
+        estado: rev.estado || '-',
+        aprobada: rev.aprobada ? 'Sí' : 'No',
+        problemas: rev.tiene_problemas ? 'Sí' : 'No',
+        kilometraje: rev.kilometraje_al_momento || '-',
+        horas_motor: rev.horas_motor_al_momento || '-'
+      });
+    });
+
+    // Guardar archivo
+    const timestamp = Date.now();
+    const fileName = `revisiones_${timestamp}.xlsx`;
+    const filePath = `./uploads/reports/excel/${fileName}`;
+    
+    await workbook.xlsx.writeFile(filePath);
+
+    return {
+      success: true,
+      fileName,
+      url: `/uploads/reports/excel/${fileName}`,
+      fullUrl: `${process.env.BACKEND_URL || process.env.FRONTEND_URL}/uploads/reports/excel/${fileName}`,
+      totalRegistros: revisiones.length
+    };
+
+  } catch (error) {
+    console.error('Error generando Excel:', error);
+    return { 
+      success: false,
+      error: 'No se pudo generar el reporte Excel' 
+    };
+  }
+}
+
+// Generar reporte Excel de Reparaciones
+async function generateExcelReparaciones(params = {}) {
+  try {
+    ensureReportDirectories();
+
+    const { mes, año, vehiculo } = params;
+    
+    const query = {};
+    if (mes && año) {
+      const mesNum = {
+        'enero': 0, 'febrero': 1, 'marzo': 2, 'abril': 3,
+        'mayo': 4, 'junio': 5, 'julio': 6, 'agosto': 7,
+        'septiembre': 8, 'octubre': 9, 'noviembre': 10, 'diciembre': 11
+      }[mes.toLowerCase()] || new Date().getMonth();
+      
+      const añoNum = año || new Date().getFullYear();
+      
+      const startDate = new Date(añoNum, mesNum, 1);
+      const endDate = new Date(añoNum, mesNum + 1, 0);
+      query.fecha_realizacion = { $gte: startDate, $lte: endDate };
+    }
+
+    const reparaciones = await Reparacion.find(query)
+      .populate('vehiculo_id', 'placa numero_economico marca modelo')
+      .sort({ fecha_realizacion: -1 })
+      .limit(500)
+      .lean();
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Reparaciones');
+
+    worksheet.columns = [
+      { header: 'Fecha', key: 'fecha', width: 12 },
+      { header: 'Placa', key: 'placa', width: 12 },
+      { header: 'No. Económico', key: 'numero_economico', width: 15 },
+      { header: 'Categoría', key: 'categoria', width: 20 },
+      { header: 'Descripción', key: 'descripcion', width: 40 },
+      { header: 'Costo Piezas', key: 'costo_piezas', width: 12 },
+      { header: 'Costo M.O.', key: 'costo_mo', width: 12 },
+      { header: 'Costo Total', key: 'costo_total', width: 12 },
+      { header: 'Estado', key: 'estado', width: 12 }
+    ];
+
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF1F2937' }
+    };
+    worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+
+    reparaciones.forEach(rep => {
+      worksheet.addRow({
+        fecha: new Date(rep.fecha_realizacion).toLocaleDateString('es-MX'),
+        placa: rep.vehiculo_id?.placa || '-',
+        numero_economico: rep.vehiculo_id?.numero_economico || '-',
+        categoria: rep.categoria || '-',
+        descripcion: rep.descripcion || '-',
+        costo_piezas: rep.costo_piezas || 0,
+        costo_mo: rep.costo_mano_obra || 0,
+        costo_total: rep.costo_total || 0,
+        estado: rep.estado || '-'
+      });
+    });
+
+    const timestamp = Date.now();
+    const fileName = `reparaciones_${timestamp}.xlsx`;
+    const filePath = `./uploads/reports/excel/${fileName}`;
+    
+    await workbook.xlsx.writeFile(filePath);
+
+    return {
+      success: true,
+      fileName,
+      url: `/uploads/reports/excel/${fileName}`,
+      fullUrl: `${process.env.BACKEND_URL || process.env.FRONTEND_URL}/uploads/reports/excel/${fileName}`,
+      totalRegistros: reparaciones.length
+    };
+
+  } catch (error) {
+    console.error('Error generando Excel reparaciones:', error);
+    return { 
+      success: false,
+      error: 'No se pudo generar el reporte de reparaciones' 
+    };
+  }
+}
+
+// Generar reporte Excel de Combustible
+async function generateExcelCombustible(params = {}) {
+  try {
+    ensureReportDirectories();
+
+    const { mes, año } = params;
+    
+    const query = {};
+    if (mes && año) {
+      const mesNum = {
+        'enero': 0, 'febrero': 1, 'marzo': 2, 'abril': 3,
+        'mayo': 4, 'junio': 5, 'julio': 6, 'agosto': 7,
+        'septiembre': 8, 'octubre': 9, 'noviembre': 10, 'diciembre': 11
+      }[mes.toLowerCase()] || new Date().getMonth();
+      
+      const añoNum = año || new Date().getFullYear();
+      
+      const startDate = new Date(añoNum, mesNum, 1);
+      const endDate = new Date(añoNum, mesNum + 1, 0);
+      query.fecha_hora = { $gte: startDate, $lte: endDate };
+    }
+
+    const cargas = await CargaCombustible.find(query)
+      .populate('vehiculo_id', 'placa numero_economico marca modelo')
+      .sort({ fecha_hora: -1 })
+      .limit(500)
+      .lean();
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Combustible');
+
+    worksheet.columns = [
+      { header: 'Fecha', key: 'fecha', width: 12 },
+      { header: 'Placa', key: 'placa', width: 12 },
+      { header: 'No. Económico', key: 'numero_economico', width: 15 },
+      { header: 'Tipo Combustible', key: 'tipo', width: 15 },
+      { header: 'Litros', key: 'litros', width: 10 },
+      { header: 'Costo', key: 'costo', width: 12 },
+      { header: 'Precio/Litro', key: 'precio_litro', width: 12 },
+      { header: 'Rendimiento', key: 'rendimiento', width: 12 },
+      { header: 'Km Inicial', key: 'km_inicial', width: 10 },
+      { header: 'Km Final', key: 'km_final', width: 10 }
+    ];
+
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF1F2937' }
+    };
+    worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+
+    cargas.forEach(carga => {
+      worksheet.addRow({
+        fecha: new Date(carga.fecha_hora).toLocaleDateString('es-MX'),
+        placa: carga.vehiculo_id?.placa || '-',
+        numero_economico: carga.vehiculo_id?.numero_economico || '-',
+        tipo: carga.tipo_combustible || '-',
+        litros: carga.litros_cargados || 0,
+        costo: carga.costo || 0,
+        precio_litro: carga.precio_por_litro || 0,
+        rendimiento: carga.rendimiento_estimado || '-',
+        km_inicial: carga.kilometraje_al_cargar || '-',
+        km_final: carga.kilometraje_final || '-'
+      });
+    });
+
+    const timestamp = Date.now();
+    const fileName = `combustible_${timestamp}.xlsx`;
+    const filePath = `./uploads/reports/excel/${fileName}`;
+    
+    await workbook.xlsx.writeFile(filePath);
+
+    return {
+      success: true,
+      fileName,
+      url: `/uploads/reports/excel/${fileName}`,
+      fullUrl: `${process.env.BACKEND_URL || process.env.FRONTEND_URL}/uploads/reports/excel/${fileName}`,
+      totalRegistros: cargas.length
+    };
+
+  } catch (error) {
+    console.error('Error generando Excel combustible:', error);
+    return { 
+      success: false,
+      error: 'No se pudo generar el reporte de combustible' 
+    };
+  }
+}
+
+// ============================================
 // DEFINICIÓN DE FUNCIONES PARA OPENAI
 // ============================================
 
@@ -323,6 +644,61 @@ const functions = [
         }
       }
     }
+  },
+  {
+    name: 'generateExcelRevisiones',
+    description: 'Genera un reporte en formato Excel con todas las revisiones. Puede filtrar por mes, año o vehículo específico.',
+    parameters: {
+      type: 'object',
+      properties: {
+        mes: {
+          type: 'string',
+          description: 'Mes a filtrar: enero, febrero, marzo, abril, mayo, junio, julio, agosto, septiembre, octubre, noviembre, diciembre'
+        },
+        año: {
+          type: 'number',
+          description: 'Año a filtrar (ej: 2026)'
+        },
+        vehiculo: {
+          type: 'string',
+          description: 'Placa o número económico del vehículo'
+        }
+      }
+    }
+  },
+  {
+    name: 'generateExcelReparaciones',
+    description: 'Genera un reporte en formato Excel con todas las reparaciones y sus costos.',
+    parameters: {
+      type: 'object',
+      properties: {
+        mes: {
+          type: 'string',
+          description: 'Mes a filtrar'
+        },
+        año: {
+          type: 'number',
+          description: 'Año a filtrar'
+        }
+      }
+    }
+  },
+  {
+    name: 'generateExcelCombustible',
+    description: 'Genera un reporte en formato Excel con el historial de cargas de combustible.',
+    parameters: {
+      type: 'object',
+      properties: {
+        mes: {
+          type: 'string',
+          description: 'Mes a filtrar'
+        },
+        año: {
+          type: 'number',
+          description: 'Año a filtrar'
+        }
+      }
+    }
   }
 ];
 
@@ -352,6 +728,7 @@ Ayudar a los administradores a obtener información rápida y análisis sobre:
 - Reparaciones y mantenimientos
 - Consumo de combustible
 - Estadísticas y métricas clave
+- Generación de reportes descargables (Excel, PDF)
 
 INSTRUCCIONES:
 - Responde de manera concisa y profesional en español
@@ -360,12 +737,14 @@ INSTRUCCIONES:
 - Si no tienes datos suficientes, pregunta al usuario por más detalles
 - Mantén un tono amigable pero profesional
 - No inventes datos, usa solo lo que te dan las funciones
+- Cuando generes reportes, incluye la URL completa del archivo en tu respuesta
 
 FORMATO DE RESPUESTAS:
 - Para listas: usa viñetas o numeración
 - Para números: formatea con separadores de miles
 - Para fechas: usa formato legible (ej: "15 de enero de 2026")
 - Para dinero: usa formato MXN (ej: "$1,500.00 MXN")
+- Para reportes generados: indica claramente la URL del archivo
 
 CONTEXTO ACTUAL:
 Fecha: ${new Date().toLocaleDateString('es-MX', { 
@@ -384,7 +763,7 @@ Fecha: ${new Date().toLocaleDateString('es-MX', {
 
     // Primera llamada a OpenAI
     const response = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo', // o 'gpt-3.5-turbo' para más económico
+      model: 'gpt-3.5-turbo',
       messages,
       functions,
       function_call: 'auto',
@@ -421,6 +800,15 @@ Fecha: ${new Date().toLocaleDateString('es-MX', {
           break;
         case 'getConsumosCombustible':
           functionResult = await getConsumosCombustible(functionArgs.dias);
+          break;
+        case 'generateExcelRevisiones':
+          functionResult = await generateExcelRevisiones(functionArgs);
+          break;
+        case 'generateExcelReparaciones':
+          functionResult = await generateExcelReparaciones(functionArgs);
+          break;
+        case 'generateExcelCombustible':
+          functionResult = await generateExcelCombustible(functionArgs);
           break;
         default:
           functionResult = { error: 'Función no reconocida' };
@@ -467,10 +855,10 @@ Fecha: ${new Date().toLocaleDateString('es-MX', {
       });
     }
     
-    if (error.response?.status === 429) {
+    if (error.response?.status === 429 || error.code === 'insufficient_quota') {
       return res.status(429).json({ 
         success: false,
-        message: 'Límite de uso de OpenAI alcanzado. Intenta más tarde.' 
+        message: 'Límite de uso de OpenAI alcanzado. Por favor verifica tu plan y billing.' 
       });
     }
 
