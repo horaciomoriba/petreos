@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import adminService from '../../services/adminService';
 import actividadService from '../../services/actividadService';
 import toast from 'react-hot-toast';
+import ChatbotPanel from '../../components/chatbot/ChatbotPanel';
 
 const Dashboard = () => {
   const { user } = useSelector((state) => state.auth);
@@ -42,7 +43,7 @@ const Dashboard = () => {
   const cargarActividades = async () => {
     try {
       setLoadingActividades(true);
-      const response = await actividadService.getRecientes(10);
+      const response = await actividadService.getRecientes(5); // ← CAMBIADO DE 10 A 5
       
       if (response.success) {
         setActividades(response.data);
@@ -204,6 +205,9 @@ const Dashboard = () => {
           </div>
         )}
       </div>
+
+      {/* Chatbot AI - Flotante */}
+      <ChatbotPanel />
     </div>
   );
 };
