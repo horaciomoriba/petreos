@@ -384,7 +384,7 @@ Fecha: ${new Date().toLocaleDateString('es-MX', {
 
     // Primera llamada a OpenAI
     const response = await openai.chat.completions.create({
-      model: 'gpt-4-turbo-preview', // o 'gpt-3.5-turbo' para más económico
+      model: 'gpt-3.5-turbo', // o 'gpt-3.5-turbo' para más económico
       messages,
       functions,
       function_call: 'auto',
@@ -428,7 +428,7 @@ Fecha: ${new Date().toLocaleDateString('es-MX', {
 
       // Segunda llamada a OpenAI con el resultado de la función
       const secondResponse = await openai.chat.completions.create({
-        model: 'gpt-4-turbo-preview',
+        model: 'gpt-3.5-turbo',
         messages: [
           ...messages,
           assistantMessage,
