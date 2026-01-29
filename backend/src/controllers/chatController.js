@@ -3,7 +3,7 @@ import Vehiculo from '../models/vehiculo.js';
 import Revision from '../models/revision.js';
 import User from '../models/user.js';
 import Reparacion from '../models/reparacion.js';
-import Carga from '../models/carga.js';
+import CargaCombustible from '../models/cargacombustible.js';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -200,7 +200,7 @@ async function getConsumosCombustible(dias = 30) {
     const fechaLimite = new Date();
     fechaLimite.setDate(fechaLimite.getDate() - dias);
 
-    const cargas = await Carga.find({
+    const cargas = await CargaCombustible.find({
       fecha_hora: { $gte: fechaLimite }
     })
     .populate('vehiculo_id', 'placa numero_economico tipo_vehiculo')
