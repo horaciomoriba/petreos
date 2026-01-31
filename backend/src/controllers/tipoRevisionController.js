@@ -1,7 +1,7 @@
 // src/controllers/tipoRevisionController.js
 
 import TipoRevision from '../models/tipoRevision.js';
-import registrarActividad from '../utils/activityLogger.js'; // ⭐ NUEVO IMPORT
+import registrarActividad from '../utils/activityLogger.js';
 
 // ===== OBTENER TODOS LOS TIPOS DE REVISIÓN =====
 export const getTiposRevision = async (req, res) => {
@@ -126,7 +126,8 @@ export const createTipoRevision = async (req, res) => {
       secciones,
       revision_llantas,
       requiere_licencia_vigente,
-      permite_comentarios
+      permite_comentarios,
+      anexos  // 🆕 Permitir crear con anexos
     } = req.body;
 
     // Validar campos requeridos
@@ -185,12 +186,12 @@ export const createTipoRevision = async (req, res) => {
         placeholder_comentarios: 'Comentarios adicionales sobre los neumáticos...'
       },
       requiere_licencia_vigente: requiere_licencia_vigente !== undefined ? requiere_licencia_vigente : true,
-      permite_comentarios: permite_comentarios !== undefined ? permite_comentarios : true
+      permite_comentarios: permite_comentarios !== undefined ? permite_comentarios : true,
+      anexos: anexos || ''  // 🆕 Anexos vacío por defecto
     });
 
     await tipoRevision.save();
 
-    // ⭐ REGISTRAR ACTIVIDAD
     await registrarActividad(
       'crear_tipo_revision',
       'admin',
@@ -224,13 +225,14 @@ export const updateTipoRevision = async (req, res) => {
       return res.status(404).json({ message: 'Tipo de revisión no encontrado' });
     }
 
-    // Campos que se pueden actualizar
+    // 🆕 Campos que se pueden actualizar (incluye 'anexos')
     const camposPermitidos = [
       'nombre',
       'secciones',
       'revision_llantas',
       'requiere_licencia_vigente',
       'permite_comentarios',
+      'anexos',  // 🆕 Permitir actualizar anexos
       'activo'
     ];
 
@@ -242,7 +244,6 @@ export const updateTipoRevision = async (req, res) => {
 
     await tipoRevision.save();
 
-    // ⭐ REGISTRAR ACTIVIDAD
     await registrarActividad(
       'actualizar_tipo_revision',
       'admin',
@@ -292,7 +293,6 @@ export const agregarSeccion = async (req, res) => {
 
     await tipoRevision.save();
 
-    // ⭐ REGISTRAR ACTIVIDAD
     await registrarActividad(
       'actualizar_tipo_revision',
       'admin',
@@ -345,7 +345,6 @@ export const agregarPregunta = async (req, res) => {
 
     await tipoRevision.save();
 
-    // ⭐ REGISTRAR ACTIVIDAD
     await registrarActividad(
       'actualizar_tipo_revision',
       'admin',
@@ -382,7 +381,6 @@ export const deleteTipoRevision = async (req, res) => {
     tipoRevision.activo = false;
     await tipoRevision.save();
 
-    // ⭐ REGISTRAR ACTIVIDAD
     await registrarActividad(
       'eliminar_tipo_revision',
       'admin',

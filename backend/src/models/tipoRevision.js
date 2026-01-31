@@ -145,7 +145,11 @@ const tipoRevisionSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
-  
+  anexos: {
+    type: String,
+    default: '',
+    trim: true
+  },
   activo: {
     type: Boolean,
     default: true
