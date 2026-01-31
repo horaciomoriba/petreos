@@ -250,7 +250,6 @@ async function getVehicles(filters = {}) {
     }
     
     const vehiculos = await Vehiculo.find(query)
-      .populate('ubicacion', 'nombre')
       .limit(20);
     
     return vehiculos.map(v => ({
@@ -261,7 +260,6 @@ async function getVehicles(filters = {}) {
       modelo: v.modelo,
       kilometraje: v.kilometraje_actual,
       horas_motor: v.horas_motor_actual,
-      ubicacion: v.ubicacion?.nombre || 'Sin ubicación'
     }));
   } catch (error) {
     console.error('Error en getVehicles:', error);
@@ -410,7 +408,7 @@ async function getVehiculoDetalle(identificador) {
         { placa: new RegExp(identificador, 'i') },
         { numero_economico: new RegExp(identificador, 'i') }
       ]
-    }).populate('ubicacion', 'nombre');
+    });
     
     if (!vehiculo) {
       return {
@@ -446,7 +444,6 @@ async function getVehiculoDetalle(identificador) {
         año: vehiculo.año,
         kilometraje_actual: vehiculo.kilometraje_actual,
         horas_motor_actual: vehiculo.horas_motor_actual,
-        ubicacion: vehiculo.ubicacion?.nombre || 'Sin ubicación',
         estado: vehiculo.estado
       },
       estadisticas: {
