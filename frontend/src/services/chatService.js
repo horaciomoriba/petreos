@@ -232,41 +232,35 @@ export const chatService = {
 
 // Sugerencias rápidas para el usuario
 export const QUICK_SUGGESTIONS = [
-  {
-    id: 1,
-    text: '¿Cuántos vehículos tengo?',
-    category: 'vehiculos',
-    icon: '🚗'
-  },
-  {
-    id: 2,
-    text: 'Revisiones pendientes de aprobación',
-    category: 'revisiones',
+  { 
+    id: 1, 
+    text: '¿Cuántas revisiones pendientes hay?',
     icon: '📋'
   },
-  {
-    id: 3,
-    text: '¿Qué vehículos tienen problemas?',
-    category: 'problemas',
-    icon: '⚠️'
+  { 
+    id: 2, 
+    text: 'Dame estadísticas de la flota',
+    icon: '📊' 
   },
-  {
-    id: 4,
-    text: 'Resumen del estado de la flota',
-    category: 'estadisticas',
-    icon: '📊'
+  { 
+    id: 3, 
+    text: 'Vehículos con más problemas',
+    icon: '⚠️' 
   },
-  {
-    id: 5,
-    text: 'Reparaciones recientes',
-    category: 'reparaciones',
-    icon: '🔧'
+  { 
+    id: 4, 
+    text: 'Excel de revisiones con gráficas',
+    icon: '📈' 
   },
-  {
-    id: 6,
-    text: 'Consumo de combustible',
-    category: 'combustible',
-    icon: '⛽'
+  { 
+    id: 5, 
+    text: 'Comparativa de costos por vehículo',
+    icon: '💰' 
+  },
+  { 
+    id: 6, 
+    text: 'Dashboard ejecutivo de la flota',
+    icon: '🎯' 
   }
 ];
 
