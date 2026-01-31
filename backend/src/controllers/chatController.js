@@ -6,7 +6,7 @@ import Vehiculo from '../models/vehiculo.js';
 import Revision from '../models/revision.js';
 import Reparacion from '../models/reparacion.js';
 import CargaCombustible from '../models/cargacombustible.js';
-import User from '../models/User.js';
+import User from '../models/user.js';
 
 // 🆕 IMPORTAR GENERADOR INTELIGENTE
 import { generateSmartReport } from '../utils/smartReportGenerator.js';
