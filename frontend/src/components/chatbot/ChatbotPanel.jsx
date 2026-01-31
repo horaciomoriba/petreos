@@ -158,185 +158,108 @@ export default function ChatbotPanel() {
   };
 
   const renderMessageContent = (content) => {
-  // ========================================
-  // DEBUG (puedes eliminar después)
-  // ========================================
-  console.log('🔍 VITE_URL:', import.meta.env.VITE_URL);
-  console.log('🔍 VITE_API_URL:', import.meta.env.VITE_API_URL);
-  
-  // Detectar URLs de archivos
-  const urlRegex = /(https?:\/\/[^\s]+\.(xlsx|xls|pdf|csv|docx)|\/uploads\/[^\s]+\.(xlsx|xls|pdf|csv|docx))/gi;
-  
-  // Buscar todas las URLs en el contenido
-  const urls = content.match(urlRegex);
-  
-  if (!urls || urls.length === 0) {
-    return content; // No hay URLs, devolver texto normal
-  }
-  
-  // Dividir el contenido por las URLs encontradas
-  const parts = content.split(urlRegex);
-  
-  return parts.map((part, index) => {
-    // Ignorar elementos vacíos o undefined
-    if (!part || part.trim() === '') {
-      return null;
+    const urlRegex = /(https?:\/\/[^\s]+\.(xlsx|xls|pdf|csv|docx)|\/uploads\/[^\s]+\.(xlsx|xls|pdf|csv|docx))/gi;
+    
+    // También detectar metadata de reportes (si el mensaje incluye info de hojas)
+    const hasSheetInfo = /incluye (\d+) hoja/i.test(content);
+    const sheetCount = hasSheetInfo ? parseInt(content.match(/incluye (\d+) hoja/i)[1]) : null;
+    
+    const urls = content.match(urlRegex);
+    
+    if (!urls || urls.length === 0) {
+      return content;
     }
     
-    // Si es una URL de archivo
-    if (part.match(/\.(xlsx|xls|pdf|csv|docx)$/i)) {
-      const fileName = part.split('/').pop();
-      const extension = fileName.split('.').pop().toUpperCase();
-      
-      // Construir URL completa
-      let downloadUrl = part;
-      
-      // Si es ruta relativa, agregar base URL
-      if (part.startsWith('/uploads/')) {
-        const baseUrl = import.meta.env.VITE_URL || 'https://srv1299131.hstgr.cloud';
-        downloadUrl = `${baseUrl}${part}`;
+    const parts = content.split(urlRegex);
+    
+    return parts.map((part, index) => {
+      if (!part || part.trim() === '') {
+        return null;
       }
       
-      // Determinar ícono y color según tipo de archivo
-      const getFileConfig = (ext) => {
-        switch (ext) {
-          case 'XLSX':
-          case 'XLS':
-            return {
-              icon: (
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" 
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              ),
-              gradient: 'from-green-600 to-green-500',
-              hoverGradient: 'hover:from-green-700 hover:to-green-600',
-              label: 'Excel',
-              bgColor: 'bg-green-50',
-              textColor: 'text-green-700',
-              borderColor: 'border-green-200'
-            };
-          case 'PDF':
-            return {
-              icon: (
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" 
-                    d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-              ),
-              gradient: 'from-red-600 to-red-500',
-              hoverGradient: 'hover:from-red-700 hover:to-red-600',
-              label: 'PDF',
-              bgColor: 'bg-red-50',
-              textColor: 'text-red-700',
-              borderColor: 'border-red-200'
-            };
-          case 'CSV':
-            return {
-              icon: (
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" 
-                    d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-              ),
-              gradient: 'from-blue-600 to-blue-500',
-              hoverGradient: 'hover:from-blue-700 hover:to-blue-600',
-              label: 'CSV',
-              bgColor: 'bg-blue-50',
-              textColor: 'text-blue-700',
-              borderColor: 'border-blue-200'
-            };
-          case 'DOCX':
-            return {
-              icon: (
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" 
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              ),
-              gradient: 'from-indigo-600 to-indigo-500',
-              hoverGradient: 'hover:from-indigo-700 hover:to-indigo-600',
-              label: 'Word',
-              bgColor: 'bg-indigo-50',
-              textColor: 'text-indigo-700',
-              borderColor: 'border-indigo-200'
-            };
-          default:
-            return {
-              icon: (
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" 
-                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              ),
-              gradient: 'from-gray-600 to-gray-500',
-              hoverGradient: 'hover:from-gray-700 hover:to-gray-600',
-              label: 'Archivo',
-              bgColor: 'bg-gray-50',
-              textColor: 'text-gray-700',
-              borderColor: 'border-gray-200'
-            };
+      if (part.match(/\.(xlsx|xls|pdf|csv|docx)$/i)) {
+        const fileName = part.split('/').pop();
+        const extension = fileName.split('.').pop().toUpperCase();
+        
+        let downloadUrl = part;
+        
+        if (part.startsWith('/uploads/')) {
+          const baseUrl = import.meta.env.VITE_URL || 'https://srv1299131.hstgr.cloud';
+          downloadUrl = `${baseUrl}${part}`;
         }
-      };
-      
-      const config = getFileConfig(extension);
-      
-      return (
-        <div key={index} className="mt-3 mb-2">
-          {/* Card del archivo */}
-          <div className={`rounded-lg border ${config.borderColor} ${config.bgColor} p-3 
-            transition-all hover:shadow-sm`}>
-            
-            {/* Header con tipo de archivo */}
-            <div className="flex items-center gap-2 mb-2">
-              <div className={`w-8 h-8 rounded-lg ${config.bgColor} border ${config.borderColor} 
-                flex items-center justify-center`}>
-                <span className={`text-xs font-bold ${config.textColor}`}>
-                  {extension}
-                </span>
+        
+        return (
+          <div key={index} className="mt-4 mb-2">
+            {/* Card Premium */}
+            <div className="rounded-xl border border-gray-200 bg-gradient-to-br 
+              from-white to-gray-50 p-4 shadow-sm hover:shadow-md transition-all">
+              
+              {/* Header */}
+              <div className="flex items-start gap-3 mb-3">
+                {/* Ícono grande */}
+                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-gray-900 
+                  to-gray-700 flex items-center justify-center flex-shrink-0 shadow-sm">
+                  <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" 
+                    stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" 
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-0.5">
+                    Reporte {extension}
+                  </h4>
+                  <p className="text-xs text-gray-500 truncate mb-2" title={fileName}>
+                    {fileName}
+                  </p>
+                  
+                  {/* Stats si hay */}
+                  {sheetCount && (
+                    <div className="flex items-center gap-3 text-xs text-gray-600">
+                      <span className="flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        {sheetCount} {sheetCount === 1 ? 'hoja' : 'hojas'}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className={`text-xs font-medium ${config.textColor} truncate`}>
-                  {config.label}
-                </p>
-                <p className="text-xs text-gray-500 truncate" title={fileName}>
-                  {fileName}
-                </p>
-              </div>
-            </div>
-            
-            {/* Botón de descarga */}
-            <a
-              href={downloadUrl}
-              download
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`w-full inline-flex items-center justify-center gap-2 
-                px-4 py-2.5 bg-gradient-to-r ${config.gradient} ${config.hoverGradient} 
-                text-white rounded-lg transition-all shadow-sm hover:shadow-md 
-                text-sm font-semibold group`}
-            >
-              {config.icon}
-              <span>Descargar {config.label}</span>
-              <svg 
-                className="w-4 h-4 opacity-75 group-hover:translate-x-0.5 transition-transform" 
-                fill="none" 
-                viewBox="0 0 24 24" 
-                stroke="currentColor" 
-                strokeWidth={2}
+              
+              {/* Botón de descarga */}
+              <a
+                href={downloadUrl}
+                download
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full inline-flex items-center justify-center gap-2 
+                  px-4 py-3 bg-gradient-to-r from-gray-900 to-gray-700 
+                  hover:from-gray-800 hover:to-gray-600 text-white rounded-lg 
+                  transition-all shadow-sm hover:shadow-md text-sm font-semibold group"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </a>
+                <svg className="w-5 h-5 group-hover:scale-110 transition-transform" 
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" 
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                <span>Descargar Reporte</span>
+                <svg className="w-4 h-4 opacity-75 group-hover:translate-x-0.5 transition-transform" 
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </a>
+            </div>
           </div>
-        </div>
-      );
-    }
-    
-    // Texto normal
-    return <span key={index}>{part}</span>;
-  }).filter(Boolean); // Filtrar nulls
-};
+        );
+      }
+      
+      return <span key={index}>{part}</span>;
+    }).filter(Boolean);
+  };
   // ============================================
   // RENDER
   // ============================================
