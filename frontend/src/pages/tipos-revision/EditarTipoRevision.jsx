@@ -220,7 +220,9 @@ const EditarTipoRevision = () => {
       planta_de_concreto: 'Planta de Concreto',
       cargador_frontal: 'Cargador Frontal',
       camioneta_pickup: 'Camioneta Pickup',
-      grua: 'Grúa'
+      grua: 'Grúa',
+      bomba_de_concreto: 'Bomba de Concreto',
+      automovil: 'Automóvil'
     };
     return textos[tipo] || tipo;
   };

@@ -61,7 +61,9 @@ const NuevoVehiculo = () => {
     { value: 'planta_de_concreto', label: 'Planta de Concreto' },
     { value: 'cargador_frontal', label: 'Cargador Frontal' },
     { value: 'camioneta_pickup', label: 'Camioneta Pickup' },
-    { value: 'grua', label: 'Grúa' }
+    { value: 'grua', label: 'Grúa' },
+    { value: 'bomba_de_concreto', label: 'Bomba de Concreto' },
+    { value: 'automovil', label: 'Automóvil' }
   ];
 
   const handleChange = (e) => {

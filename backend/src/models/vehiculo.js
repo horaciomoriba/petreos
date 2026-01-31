@@ -58,7 +58,7 @@ const vehiculoSchema = new mongoose.Schema({
   tipo_vehiculo: {
     type: String,
     required: true,
-    enum: ['olla_revolvedora','planta_de_concreto', 'cargador_frontal', 'camioneta_pickup', 'grua'],
+    enum: ['olla_revolvedora','planta_de_concreto', 'cargador_frontal', 'camioneta_pickup', 'grua', 'bomba_de_concreto', 'automovil'],
     lowercase: true
   },
   marca: {

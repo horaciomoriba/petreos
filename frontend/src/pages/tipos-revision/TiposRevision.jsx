@@ -80,7 +80,9 @@ const TiposRevision = () => {
     planta_de_concreto: 'Plantas de Concreto',
     cargador_frontal: 'Cargador Frontal',
     camioneta_pickup: 'Camionetas Pickup',
-    grua: 'Grúas'
+    grua: 'Grúas',
+    bomba_de_concreto: 'Bomba de Concreto',
+    automovil: 'Automóvil'
   };
 
   const getBadgeFrecuencia = (frecuencia) => {
@@ -180,6 +182,8 @@ const TiposRevision = () => {
                   <option value="cargador_frontal">Cargador Frontal</option>
                   <option value="camioneta_pickup">Camioneta Pickup</option>
                   <option value="grua">Grúa</option>
+                  <option value="bomba_de_concreto">Bomba de Concreto</option>
+                  <option value="automovil">Automóvil</option>
                 </select>
               </div>
 
