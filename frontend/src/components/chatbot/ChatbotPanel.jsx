@@ -158,53 +158,61 @@ export default function ChatbotPanel() {
   };
 
   const renderMessageContent = (content) => {
-    // Detectar URLs de archivos (relativas y absolutas)
+    // Detectar URLs de archivos
     const urlRegex = /(https?:\/\/[^\s]+\.(xlsx|xls|pdf|csv|docx)|\/uploads\/[^\s]+\.(xlsx|xls|pdf|csv|docx))/gi;
     
-    if (urlRegex.test(content)) {
-      const parts = content.split(urlRegex);
-      
-      return parts.map((part, index) => {
-        // Si es una URL de archivo
-        if (part.match(/\.(xlsx|xls|pdf|csv|docx)$/i)) {
-          const fileName = part.split('/').pop();
-          const extension = fileName.split('.').pop().toUpperCase();
-          
-          // ========================================
-          // CONSTRUIR URL COMPLETA DESDE .ENV ⭐
-          // ========================================
-          let downloadUrl = part;
-          
-          // Si es ruta relativa, agregar base URL
-          if (part.startsWith('/uploads/')) {
-            const baseUrl = import.meta.env.VITE_URL || 'https://srv1299131.hstgr.cloud';
-            downloadUrl = `${baseUrl}${part}`;
-          }
-          
-          return (
-            <a
-              key={index}
-              href={downloadUrl}
-              download
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-3 py-2 mt-2 text-sm font-medium 
-              text-white bg-gradient-to-r from-gray-900 to-gray-700 hover:from-gray-800 
-              hover:to-gray-600 rounded-lg transition-all shadow-sm hover:shadow-md"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Descargar {extension}
-            </a>
-          );
-        }
-        
-        return <span key={index}>{part}</span>;
-      });
+    // Buscar todas las URLs en el contenido
+    const urls = content.match(urlRegex);
+    
+    if (!urls || urls.length === 0) {
+      return content; // No hay URLs, devolver texto normal
     }
     
-    return content;
+    // Dividir el contenido por las URLs encontradas
+    const parts = content.split(urlRegex);
+    
+    return parts.map((part, index) => {
+      // Ignorar elementos vacíos o undefined
+      if (!part || part.trim() === '') {
+        return null;
+      }
+      
+      // Si es una URL de archivo
+      if (part.match(/\.(xlsx|xls|pdf|csv|docx)$/i)) {
+        const fileName = part.split('/').pop();
+        const extension = fileName.split('.').pop().toUpperCase();
+        
+        // Construir URL completa
+        let downloadUrl = part;
+        
+        // Si es ruta relativa, agregar base URL
+        if (part.startsWith('/uploads/')) {
+          const baseUrl = import.meta.env.VITE_URL || 'https://srv1299131.hstgr.cloud';
+          downloadUrl = `${baseUrl}${part}`;
+        }
+        
+        return (
+          <a
+            key={index}
+            href={downloadUrl}
+            download
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-3 py-2 mt-2 text-sm font-medium 
+            text-white bg-gradient-to-r from-gray-900 to-gray-700 hover:from-gray-800 
+            hover:to-gray-600 rounded-lg transition-all shadow-sm hover:shadow-md"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Descargar {extension}
+          </a>
+        );
+      }
+      
+      // Texto normal
+      return <span key={index}>{part}</span>;
+    }).filter(Boolean); // Filtrar nulls
   };
   // ============================================
   // RENDER
