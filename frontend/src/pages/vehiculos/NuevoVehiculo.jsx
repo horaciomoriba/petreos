@@ -59,7 +59,7 @@ const NuevoVehiculo = () => {
   const tiposVehiculo = [
     { value: 'olla_revolvedora', label: 'Olla Revolvedora de Concreto' },
     { value: 'planta_de_concreto', label: 'Planta de Concreto' },
-    { value: 'camion_carga_frontal', label: 'Camión de Carga Frontal' },
+    { value: 'cargador_frontal', label: 'Cargador Frontal' },
     { value: 'camioneta_pickup', label: 'Camioneta Pickup' },
     { value: 'grua', label: 'Grúa' }
   ];

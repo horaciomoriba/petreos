@@ -73,7 +73,7 @@ const DetalleTipoRevision = () => {
     const textos = {
       olla_revolvedora: 'Olla Revolvedora',
       planta_de_concreto: 'Planta de Concreto',
-      camion_carga_frontal: 'Camión de Carga Frontal',
+      cargador_frontal: 'Cargador Frontal',
       camioneta_pickup: 'Camioneta Pickup',
       grua: 'Grúa'
     };

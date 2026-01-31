@@ -78,7 +78,7 @@ const TiposRevision = () => {
   const tiposVehiculo = {
     olla_revolvedora: 'Ollas Revolvedoras',
     planta_de_concreto: 'Plantas de Concreto',
-    camion_carga_frontal: 'Camiones de Carga Frontal',
+    cargador_frontal: 'Cargador Frontal',
     camioneta_pickup: 'Camionetas Pickup',
     grua: 'Grúas'
   };
@@ -177,7 +177,7 @@ const TiposRevision = () => {
                   <option value="">Todos los tipos</option>
                   <option value="olla_revolvedora">Olla Revolvedora</option>
                   <option value="planta_de_concreto">Planta de Concreto</option>
-                  <option value="camion_carga_frontal">Camión Carga Frontal</option>
+                  <option value="cargador_frontal">Cargador Frontal</option>
                   <option value="camioneta_pickup">Camioneta Pickup</option>
                   <option value="grua">Grúa</option>
                 </select>
