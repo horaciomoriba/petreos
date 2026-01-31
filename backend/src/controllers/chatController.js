@@ -397,6 +397,264 @@ async function getConsumosCombustible(dias = 30) {
 }
 
 // ============================================
+// 🆕 FUNCIONES ADICIONALES INTELIGENTES
+// ============================================
+
+/**
+ * Buscar vehículo específico por placa O número económico
+ */
+async function getVehiculoDetalle(identificador) {
+  try {
+    const vehiculo = await Vehiculo.findOne({
+      $or: [
+        { placa: new RegExp(identificador, 'i') },
+        { numero_economico: new RegExp(identificador, 'i') }
+      ]
+    }).populate('ubicacion', 'nombre');
+    
+    if (!vehiculo) {
+      return {
+        encontrado: false,
+        mensaje: `No se encontró ningún vehículo con placa o número económico: ${identificador}`
+      };
+    }
+    
+    // Obtener estadísticas del vehículo
+    const totalRevisiones = await Revision.countDocuments({ vehiculo: vehiculo._id });
+    const revisionesConProblemas = await Revision.countDocuments({ 
+      vehiculo: vehiculo._id, 
+      tiene_problemas: true 
+    });
+    
+    const ultimaRevision = await Revision.findOne({ vehiculo: vehiculo._id })
+      .sort({ fecha: -1 })
+      .populate('tipo_revision', 'nombre frecuencia');
+    
+    const reparacionesRecientes = await Reparacion.countDocuments({ 
+      vehiculo: vehiculo._id,
+      fecha: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
+    });
+    
+    return {
+      encontrado: true,
+      vehiculo: {
+        placa: vehiculo.placa,
+        numero_economico: vehiculo.numero_economico,
+        tipo: vehiculo.tipo_vehiculo,
+        marca: vehiculo.marca,
+        modelo: vehiculo.modelo,
+        año: vehiculo.año,
+        kilometraje_actual: vehiculo.kilometraje_actual,
+        horas_motor_actual: vehiculo.horas_motor_actual,
+        ubicacion: vehiculo.ubicacion?.nombre || 'Sin ubicación',
+        estado: vehiculo.estado
+      },
+      estadisticas: {
+        total_revisiones: totalRevisiones,
+        revisiones_con_problemas: revisionesConProblemas,
+        reparaciones_ultimo_mes: reparacionesRecientes,
+        ultima_revision: ultimaRevision ? {
+          fecha: ultimaRevision.fecha,
+          tipo: ultimaRevision.tipo_revision?.nombre,
+          frecuencia: ultimaRevision.frecuencia,
+          tiene_problemas: ultimaRevision.tiene_problemas,
+          aprobada: ultimaRevision.aprobada
+        } : null
+      }
+    };
+  } catch (error) {
+    console.error('Error en getVehiculoDetalle:', error);
+    throw error;
+  }
+}
+
+/**
+ * Obtener última revisión de un tipo específico para UN vehículo
+ */
+async function getUltimaRevisionPorTipo(identificador, tipoFrecuencia) {
+  try {
+    // Buscar vehículo
+    const vehiculo = await Vehiculo.findOne({
+      $or: [
+        { placa: new RegExp(identificador, 'i') },
+        { numero_economico: new RegExp(identificador, 'i') }
+      ]
+    });
+    
+    if (!vehiculo) {
+      return {
+        encontrado: false,
+        mensaje: `No se encontró el vehículo: ${identificador}`
+      };
+    }
+    
+    // Buscar última revisión del tipo especificado
+    const query = { vehiculo: vehiculo._id };
+    
+    if (tipoFrecuencia) {
+      query.frecuencia = tipoFrecuencia; // 'diaria', 'mensual', 'bimestral'
+    }
+    
+    const ultimaRevision = await Revision.findOne(query)
+      .sort({ fecha: -1 })
+      .populate('tipo_revision', 'nombre frecuencia')
+      .populate('vehiculo', 'placa numero_economico');
+    
+    if (!ultimaRevision) {
+      return {
+        encontrado: false,
+        mensaje: `No se encontraron revisiones ${tipoFrecuencia || ''} para ${vehiculo.numero_economico}`
+      };
+    }
+    
+    // Calcular días desde última revisión
+    const diasDesde = Math.floor((Date.now() - new Date(ultimaRevision.fecha)) / (1000 * 60 * 60 * 24));
+    
+    return {
+      encontrado: true,
+      vehiculo: `${vehiculo.placa} (${vehiculo.numero_economico})`,
+      ultima_revision: {
+        fecha: ultimaRevision.fecha,
+        dias_desde_ultima: diasDesde,
+        tipo: ultimaRevision.tipo_revision?.nombre,
+        frecuencia: ultimaRevision.frecuencia,
+        operador: ultimaRevision.operador?.nombre || 'N/A',
+        tiene_problemas: ultimaRevision.tiene_problemas,
+        aprobada: ultimaRevision.aprobada,
+        estado: ultimaRevision.estado
+      }
+    };
+  } catch (error) {
+    console.error('Error en getUltimaRevisionPorTipo:', error);
+    throw error;
+  }
+}
+
+/**
+ * Obtener TODAS las últimas revisiones por tipo (para todos los vehículos)
+ */
+async function getUltimasRevisionesDiarias(limite = 20) {
+  try {
+    const vehiculos = await Vehiculo.find({ estado: 'activo' });
+    
+    const resultados = await Promise.all(
+      vehiculos.map(async (vehiculo) => {
+        const ultimaDiaria = await Revision.findOne({
+          vehiculo: vehiculo._id,
+          frecuencia: 'diaria'
+        })
+          .sort({ fecha: -1 })
+          .populate('tipo_revision', 'nombre');
+        
+        if (!ultimaDiaria) {
+          return {
+            vehiculo: `${vehiculo.placa} (${vehiculo.numero_economico})`,
+            ultima_revision: null,
+            dias_sin_revision: 'Sin revisiones',
+            alerta: true
+          };
+        }
+        
+        const diasDesde = Math.floor((Date.now() - new Date(ultimaDiaria.fecha)) / (1000 * 60 * 60 * 24));
+        
+        return {
+          vehiculo: `${vehiculo.placa} (${vehiculo.numero_economico})`,
+          ultima_revision: {
+            fecha: ultimaDiaria.fecha,
+            tiene_problemas: ultimaDiaria.tiene_problemas,
+            aprobada: ultimaDiaria.aprobada
+          },
+          dias_sin_revision: diasDesde,
+          alerta: diasDesde > 1 // Alerta si pasó más de 1 día
+        };
+      })
+    );
+    
+    // Ordenar por días sin revisión (mayor a menor)
+    const ordenados = resultados.sort((a, b) => {
+      const diasA = typeof a.dias_sin_revision === 'number' ? a.dias_sin_revision : 999;
+      const diasB = typeof b.dias_sin_revision === 'number' ? b.dias_sin_revision : 999;
+      return diasB - diasA;
+    });
+    
+    return ordenados.slice(0, limite);
+  } catch (error) {
+    console.error('Error en getUltimasRevisionesDiarias:', error);
+    throw error;
+  }
+}
+
+/**
+ * Buscar revisiones con filtros flexibles
+ */
+async function buscarRevisiones(filtros) {
+  try {
+    const query = {};
+    
+    // Filtro por vehículo
+    if (filtros.vehiculo) {
+      const vehiculos = await Vehiculo.find({
+        $or: [
+          { placa: new RegExp(filtros.vehiculo, 'i') },
+          { numero_economico: new RegExp(filtros.vehiculo, 'i') }
+        ]
+      });
+      if (vehiculos.length > 0) {
+        query.vehiculo = { $in: vehiculos.map(v => v._id) };
+      }
+    }
+    
+    // Filtro por frecuencia
+    if (filtros.frecuencia) {
+      query.frecuencia = filtros.frecuencia;
+    }
+    
+    // Filtro por estado
+    if (filtros.estado) {
+      query.estado = filtros.estado;
+    }
+    
+    // Filtro por aprobada
+    if (filtros.aprobada !== undefined) {
+      query.aprobada = filtros.aprobada;
+    }
+    
+    // Filtro por problemas
+    if (filtros.tiene_problemas !== undefined) {
+      query.tiene_problemas = filtros.tiene_problemas;
+    }
+    
+    // Filtro por rango de fechas
+    if (filtros.dias_atras) {
+      const fechaLimite = new Date();
+      fechaLimite.setDate(fechaLimite.getDate() - filtros.dias_atras);
+      query.fecha = { $gte: fechaLimite };
+    }
+    
+    const revisiones = await Revision.find(query)
+      .populate('vehiculo', 'placa numero_economico tipo_vehiculo')
+      .populate('tipo_revision', 'nombre frecuencia')
+      .sort({ fecha: -1 })
+      .limit(filtros.limite || 50);
+    
+    return revisiones.map(r => ({
+      id: r._id,
+      vehiculo: `${r.vehiculo?.placa} (${r.vehiculo?.numero_economico})`,
+      tipo: r.tipo_revision?.nombre || 'N/A',
+      frecuencia: r.frecuencia,
+      fecha: r.fecha,
+      operador: r.operador?.nombre || 'N/A',
+      estado: r.estado,
+      aprobada: r.aprobada,
+      tiene_problemas: r.tiene_problemas
+    }));
+  } catch (error) {
+    console.error('Error en buscarRevisiones:', error);
+    throw error;
+  }
+}
+
+// ============================================
 // 🆕 FUNCIONES DE REPORTES - AHORA USA generateSmartReport
 // ============================================
 
@@ -536,6 +794,95 @@ const functions = [
       }
     }
   },
+   {
+    name: 'getVehiculoDetalle',
+    description: 'Obtiene información detallada de un vehículo específico buscando por placa O número económico, incluyendo estadísticas de revisiones',
+    parameters: {
+      type: 'object',
+      properties: {
+        identificador: {
+          type: 'string',
+          description: 'Placa o número económico del vehículo (ejemplo: "ABC-123" o "DEMO1")'
+        }
+      },
+      required: ['identificador']
+    }
+  },
+  {
+    name: 'getUltimaRevisionPorTipo',
+    description: 'Obtiene la última revisión de un vehículo específico, opcionalmente filtrada por tipo (diaria, mensual, bimestral)',
+    parameters: {
+      type: 'object',
+      properties: {
+        identificador: {
+          type: 'string',
+          description: 'Placa o número económico del vehículo'
+        },
+        tipoFrecuencia: {
+          type: 'string',
+          enum: ['diaria', 'mensual', 'bimestral'],
+          description: 'Tipo de revisión a buscar (opcional). Si no se especifica, obtiene la última de cualquier tipo'
+        }
+      },
+      required: ['identificador']
+    }
+  },
+  {
+    name: 'getUltimasRevisionesDiarias',
+    description: 'Obtiene las últimas revisiones diarias de TODOS los vehículos activos, mostrando cuántos días han pasado desde la última. Útil para identificar vehículos sin revisiones recientes',
+    parameters: {
+      type: 'object',
+      properties: {
+        limite: {
+          type: 'number',
+          description: 'Número máximo de resultados (default: 20)',
+          default: 20
+        }
+      }
+    }
+  },
+  {
+    name: 'buscarRevisiones',
+    description: 'Búsqueda flexible de revisiones con múltiples filtros: vehículo, frecuencia, estado, aprobada, problemas, días atrás',
+    parameters: {
+      type: 'object',
+      properties: {
+        vehiculo: {
+          type: 'string',
+          description: 'Placa o número económico (búsqueda parcial)'
+        },
+        frecuencia: {
+          type: 'string',
+          enum: ['diaria', 'mensual', 'bimestral'],
+          description: 'Tipo de revisión'
+        },
+        estado: {
+          type: 'string',
+          enum: ['en_progreso', 'completada', 'pendiente_revision', 'cerrada'],
+          description: 'Estado de la revisión'
+        },
+        aprobada: {
+          type: 'boolean',
+          description: 'Filtrar por aprobada (true) o no aprobada (false)'
+        },
+        tiene_problemas: {
+          type: 'boolean',
+          description: 'Filtrar por revisiones con problemas'
+        },
+        dias_atras: {
+          type: 'number',
+          description: 'Buscar revisiones de los últimos N días'
+        },
+        limite: {
+          type: 'number',
+          description: 'Máximo de resultados (default: 50)',
+          default: 50
+        }
+      }
+    }
+  },
+
+  
   
   // 🆕 FUNCIÓN UNIVERSAL DE REPORTES
   {
@@ -785,6 +1132,21 @@ export const sendMessage = async (req, res) => {
         case 'generateExcelCombustible':
           functionResult = await generateExcelCombustible(functionArgs);
           break;
+        case 'getVehiculoDetalle':
+          functionResult = await getVehiculoDetalle(functionArgs.identificador);
+          break;
+        case 'getUltimaRevisionPorTipo':
+          functionResult = await getUltimaRevisionPorTipo(
+            functionArgs.identificador, 
+            functionArgs.tipoFrecuencia
+          );
+          break;
+        case 'getUltimasRevisionesDiarias':
+          functionResult = await getUltimasRevisionesDiarias(functionArgs.limite);
+          break;
+        case 'buscarRevisiones':
+          functionResult = await buscarRevisiones(functionArgs);
+    break;
         default:
           functionResult = { error: 'Función no encontrada' };
       }
@@ -849,3 +1211,4 @@ export const sendMessage = async (req, res) => {
     });
   }
 };
+
