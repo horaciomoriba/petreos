@@ -158,8 +158,8 @@ export default function ChatbotPanel() {
   };
 
   const renderMessageContent = (content) => {
-    // Detectar URLs en el mensaje
-    const urlRegex = /(https?:\/\/[^\s]+\.(xlsx|xls|pdf|csv|docx))/gi;
+    // Detectar URLs de archivos (relativas y absolutas)
+    const urlRegex = /(https?:\/\/[^\s]+\.(xlsx|xls|pdf|csv|docx)|\/uploads\/[^\s]+\.(xlsx|xls|pdf|csv|docx))/gi;
     
     if (urlRegex.test(content)) {
       const parts = content.split(urlRegex);
@@ -170,10 +170,21 @@ export default function ChatbotPanel() {
           const fileName = part.split('/').pop();
           const extension = fileName.split('.').pop().toUpperCase();
           
+          // ========================================
+          // CONSTRUIR URL COMPLETA DESDE .ENV ⭐
+          // ========================================
+          let downloadUrl = part;
+          
+          // Si es ruta relativa, agregar base URL
+          if (part.startsWith('/uploads/')) {
+            const baseUrl = import.meta.env.VITE_URL || 'https://srv1299131.hstgr.cloud';
+            downloadUrl = `${baseUrl}${part}`;
+          }
+          
           return (
             <a
               key={index}
-              href={part}
+              href={downloadUrl}
               download
               target="_blank"
               rel="noopener noreferrer"
@@ -195,7 +206,6 @@ export default function ChatbotPanel() {
     
     return content;
   };
-
   // ============================================
   // RENDER
   // ============================================

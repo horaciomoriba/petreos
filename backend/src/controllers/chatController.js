@@ -371,11 +371,13 @@ async function generateExcelRevisiones(params = {}) {
     
     await workbook.xlsx.writeFile(filePath);
 
+    // ========================================
+    // DEVOLVER SOLO RUTA RELATIVA ⭐
+    // ========================================
     return {
       success: true,
       fileName,
-      url: `/uploads/reports/excel/${fileName}`,
-      fullUrl: `${process.env.BACKEND_URL || process.env.FRONTEND_URL}/uploads/reports/excel/${fileName}`,
+      url: `/uploads/reports/excel/${fileName}`, // ← Ruta relativa
       totalRegistros: revisiones.length
     };
 
@@ -462,9 +464,8 @@ async function generateExcelReparaciones(params = {}) {
     return {
       success: true,
       fileName,
-      url: `/uploads/reports/excel/${fileName}`,
-      fullUrl: `${process.env.BACKEND_URL || process.env.FRONTEND_URL}/uploads/reports/excel/${fileName}`,
-      totalRegistros: reparaciones.length
+      url: `/uploads/reports/excel/${fileName}`, // ← Siempre ruta relativa
+      totalRegistros: datos.length
     };
 
   } catch (error) {
@@ -552,9 +553,8 @@ async function generateExcelCombustible(params = {}) {
     return {
       success: true,
       fileName,
-      url: `/uploads/reports/excel/${fileName}`,
-      fullUrl: `${process.env.BACKEND_URL || process.env.FRONTEND_URL}/uploads/reports/excel/${fileName}`,
-      totalRegistros: cargas.length
+      url: `/uploads/reports/excel/${fileName}`, // ← Siempre ruta relativa
+      totalRegistros: datos.length
     };
 
   } catch (error) {
