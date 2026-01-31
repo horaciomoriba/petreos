@@ -34,6 +34,7 @@ import DetalleRevision from './pages/revisiones/DetalleRevision'
 import TiposRevision from './pages/tipos-revision/TiposRevision'
 import NuevoTipoRevision from './pages/tipos-revision/NuevoTipoRevision'
 import DetalleTipoRevision from './pages/tipos-revision/DetalleTipoRevision'
+import EditarTipoRevision from './pages/tipos-revision/EditarTipoRevision'
 
 import Usuarios from './pages/usuarios/Usuarios';
 import NuevoAdmin from './pages/usuarios/NuevoAdmin';
@@ -264,6 +265,16 @@ function AppContent() {
             <ProtectedRoute>
               <DashboardLayout>
                 <DetalleTipoRevision />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tipos-revision/:id/editar"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <EditarTipoRevision />
               </DashboardLayout>
             </ProtectedRoute>
           }
