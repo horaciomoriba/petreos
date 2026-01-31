@@ -737,14 +737,12 @@ INSTRUCCIONES:
 - Si no tienes datos suficientes, pregunta al usuario por más detalles
 - Mantén un tono amigable pero profesional
 - No inventes datos, usa solo lo que te dan las funciones
-- Cuando generes reportes, incluye la URL completa del archivo en tu respuesta
 
 FORMATO DE RESPUESTAS:
 - Para listas: usa viñetas o numeración
 - Para números: formatea con separadores de miles
 - Para fechas: usa formato legible (ej: "15 de enero de 2026")
 - Para dinero: usa formato MXN (ej: "$1,500.00 MXN")
-- Para reportes generados: indica claramente la URL del archivo
 
 CONTEXTO ACTUAL:
 Fecha: ${new Date().toLocaleDateString('es-MX', { 

@@ -158,6 +158,11 @@ export default function ChatbotPanel() {
   };
 
   const renderMessageContent = (content) => {
+    // ========================================
+    // DEBUG TEMPORAL ⭐
+    // ========================================
+    console.log('🔍 VITE_URL:', import.meta.env.VITE_URL);
+    console.log('🔍 VITE_API_URL:', import.meta.env.VITE_API_URL);
     // Detectar URLs de archivos
     const urlRegex = /(https?:\/\/[^\s]+\.(xlsx|xls|pdf|csv|docx)|\/uploads\/[^\s]+\.(xlsx|xls|pdf|csv|docx))/gi;
     
