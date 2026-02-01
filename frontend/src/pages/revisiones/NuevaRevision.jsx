@@ -931,6 +931,40 @@ const NuevaRevision = () => {
                 </div>
               </div>
 
+              {/* 🆕 ANEXOS - Notas Importantes */}
+              {tipoRevision.anexos && tipoRevision.anexos.trim() !== '' && (
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                  <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-transparent">
+                    <div className="flex items-center gap-2">
+                      <svg className="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div>
+                        <h2 className="text-base font-semibold text-gray-900">Notas Importantes</h2>
+                        <p className="text-xs text-gray-500 mt-0.5">Lee atentamente antes de completar la revisión</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 sm:p-6">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="bg-white border border-blue-100 rounded-lg p-4">
+                        <div className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">
+                          {tipoRevision.anexos}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>Estas notas son solo informativas y no se guardan en la revisión</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Alerta si hay problemas */}
               {tieneProblemas && (
                 <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded-lg p-4">

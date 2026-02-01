@@ -809,228 +809,228 @@ const NuevaRevisionOperador = () => {
                             </div>
                           </div>
 
-{/* 🆕 Tabla Responsive de Neumáticos - SIN scroll horizontal */}
-<div className="mb-4">
-  {/* Desktop: Tabla completa */}
-  <div className="hidden md:block overflow-x-auto">
-    <table className="w-full text-sm">
-      <thead>
-        <tr className="border-b border-gray-200">
-          <th className="px-2 py-2 text-left text-xs font-semibold text-gray-700">Pos</th>
-          <th className="px-2 py-2 text-left text-xs font-semibold text-gray-700">Eje</th>
-          <th className="px-2 py-2 text-left text-xs font-semibold text-gray-700">Presión (PSI)</th>
-          <th className="px-2 py-2 text-center text-xs font-semibold text-gray-700">P</th>
-          <th className="px-2 py-2 text-left text-xs font-semibold text-gray-700">Callo (mm)</th>
-          <th className="px-2 py-2 text-center text-xs font-semibold text-gray-700">C</th>
-        </tr>
-      </thead>
-      <tbody>
-        {eje.neumaticos
-          .sort((a, b) => a.posicion_global - b.posicion_global)
-          .map((neumatico) => {
-            const llanta = formData.neumaticos.find(l => l.posicion === neumatico.posicion_global);
-            const tieneProblema = llanta?.presion_estado === 'Mal' || llanta?.callo_estado === 'Mal';
-            
-            return (
-              <tr 
-                key={neumatico.posicion_global}
-                className={`border-b border-gray-100 ${tieneProblema ? 'bg-red-50' : 'hover:bg-gray-50'}`}
-              >
-                <td className="px-2 py-3">
-                  <div className={`w-8 h-8 rounded flex items-center justify-center font-bold text-sm ${
-                    tieneProblema ? 'bg-red-200 text-red-900' : 'bg-gray-200 text-gray-900'
-                  }`}>
-                    {neumatico.posicion_global}
-                  </div>
-                </td>
-                <td className="px-2 py-3 text-xs text-gray-600 capitalize">
-                  {eje.numero} • {neumatico.lado}
-                </td>
-                <td className="px-2 py-3">
-                  <input
-                    type="number"
-                    value={llanta?.presion_medida || ''}
-                    onChange={(e) => handleNeumaticoChange(neumatico.posicion_global, 'presion_medida', parseFloat(e.target.value) || 0)}
-                    min="0"
-                    max="200"
-                    step="0.5"
-                    className="w-20 px-2 py-1 text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-gray-900"
-                  />
-                </td>
-                <td className="px-2 py-3">
-                  <div className="flex gap-1 justify-center">
-                    <button
-                      type="button"
-                      onClick={() => handleNeumaticoChange(neumatico.posicion_global, 'presion_estado', 'Bien')}
-                      className={`w-7 h-7 rounded flex items-center justify-center transition-all ${
-                        llanta?.presion_estado === 'Bien' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500'
-                      }`}
-                    >
-                      ✓
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleNeumaticoChange(neumatico.posicion_global, 'presion_estado', 'Mal')}
-                      className={`w-7 h-7 rounded flex items-center justify-center transition-all ${
-                        llanta?.presion_estado === 'Mal' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-500'
-                      }`}
-                    >
-                      ✗
-                    </button>
-                  </div>
-                </td>
-                <td className="px-2 py-3">
-                  <input
-                    type="number"
-                    value={llanta?.callo_medida || ''}
-                    onChange={(e) => handleNeumaticoChange(neumatico.posicion_global, 'callo_medida', parseFloat(e.target.value) || 0)}
-                    min="0"
-                    max="30"
-                    step="0.1"
-                    className="w-20 px-2 py-1 text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-gray-900"
-                  />
-                </td>
-                <td className="px-2 py-3">
-                  <div className="flex gap-1 justify-center">
-                    <button
-                      type="button"
-                      onClick={() => handleNeumaticoChange(neumatico.posicion_global, 'callo_estado', 'Bien')}
-                      className={`w-7 h-7 rounded flex items-center justify-center transition-all ${
-                        llanta?.callo_estado === 'Bien' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500'
-                      }`}
-                    >
-                      ✓
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleNeumaticoChange(neumatico.posicion_global, 'callo_estado', 'Mal')}
-                      className={`w-7 h-7 rounded flex items-center justify-center transition-all ${
-                        llanta?.callo_estado === 'Mal' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-500'
-                      }`}
-                    >
-                      ✗
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-      </tbody>
-    </table>
-  </div>
+                          {/* 🆕 Tabla Responsive de Neumáticos - SIN scroll horizontal */}
+                          <div className="mb-4">
+                            {/* Desktop: Tabla completa */}
+                            <div className="hidden md:block overflow-x-auto">
+                              <table className="w-full text-sm">
+                                <thead>
+                                  <tr className="border-b border-gray-200">
+                                    <th className="px-2 py-2 text-left text-xs font-semibold text-gray-700">Pos</th>
+                                    <th className="px-2 py-2 text-left text-xs font-semibold text-gray-700">Eje</th>
+                                    <th className="px-2 py-2 text-left text-xs font-semibold text-gray-700">Presión (PSI)</th>
+                                    <th className="px-2 py-2 text-center text-xs font-semibold text-gray-700">P</th>
+                                    <th className="px-2 py-2 text-left text-xs font-semibold text-gray-700">Callo (mm)</th>
+                                    <th className="px-2 py-2 text-center text-xs font-semibold text-gray-700">C</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {eje.neumaticos
+                                    .sort((a, b) => a.posicion_global - b.posicion_global)
+                                    .map((neumatico) => {
+                                      const llanta = formData.neumaticos.find(l => l.posicion === neumatico.posicion_global);
+                                      const tieneProblema = llanta?.presion_estado === 'Mal' || llanta?.callo_estado === 'Mal';
+                                      
+                                      return (
+                                        <tr 
+                                          key={neumatico.posicion_global}
+                                          className={`border-b border-gray-100 ${tieneProblema ? 'bg-red-50' : 'hover:bg-gray-50'}`}
+                                        >
+                                          <td className="px-2 py-3">
+                                            <div className={`w-8 h-8 rounded flex items-center justify-center font-bold text-sm ${
+                                              tieneProblema ? 'bg-red-200 text-red-900' : 'bg-gray-200 text-gray-900'
+                                            }`}>
+                                              {neumatico.posicion_global}
+                                            </div>
+                                          </td>
+                                          <td className="px-2 py-3 text-xs text-gray-600 capitalize">
+                                            {eje.numero} • {neumatico.lado}
+                                          </td>
+                                          <td className="px-2 py-3">
+                                            <input
+                                              type="number"
+                                              value={llanta?.presion_medida || ''}
+                                              onChange={(e) => handleNeumaticoChange(neumatico.posicion_global, 'presion_medida', parseFloat(e.target.value) || 0)}
+                                              min="0"
+                                              max="200"
+                                              step="0.5"
+                                              className="w-20 px-2 py-1 text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-gray-900"
+                                            />
+                                          </td>
+                                          <td className="px-2 py-3">
+                                            <div className="flex gap-1 justify-center">
+                                              <button
+                                                type="button"
+                                                onClick={() => handleNeumaticoChange(neumatico.posicion_global, 'presion_estado', 'Bien')}
+                                                className={`w-7 h-7 rounded flex items-center justify-center transition-all ${
+                                                  llanta?.presion_estado === 'Bien' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500'
+                                                }`}
+                                              >
+                                                ✓
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleNeumaticoChange(neumatico.posicion_global, 'presion_estado', 'Mal')}
+                                                className={`w-7 h-7 rounded flex items-center justify-center transition-all ${
+                                                  llanta?.presion_estado === 'Mal' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-500'
+                                                }`}
+                                              >
+                                                ✗
+                                              </button>
+                                            </div>
+                                          </td>
+                                          <td className="px-2 py-3">
+                                            <input
+                                              type="number"
+                                              value={llanta?.callo_medida || ''}
+                                              onChange={(e) => handleNeumaticoChange(neumatico.posicion_global, 'callo_medida', parseFloat(e.target.value) || 0)}
+                                              min="0"
+                                              max="30"
+                                              step="0.1"
+                                              className="w-20 px-2 py-1 text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-gray-900"
+                                            />
+                                          </td>
+                                          <td className="px-2 py-3">
+                                            <div className="flex gap-1 justify-center">
+                                              <button
+                                                type="button"
+                                                onClick={() => handleNeumaticoChange(neumatico.posicion_global, 'callo_estado', 'Bien')}
+                                                className={`w-7 h-7 rounded flex items-center justify-center transition-all ${
+                                                  llanta?.callo_estado === 'Bien' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500'
+                                                }`}
+                                              >
+                                                ✓
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleNeumaticoChange(neumatico.posicion_global, 'callo_estado', 'Mal')}
+                                                className={`w-7 h-7 rounded flex items-center justify-center transition-all ${
+                                                  llanta?.callo_estado === 'Mal' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-500'
+                                                }`}
+                                              >
+                                                ✗
+                                              </button>
+                                            </div>
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                </tbody>
+                              </table>
+                            </div>
 
-  {/* Mobile: Mini-cards compactos */}
-  <div className="md:hidden space-y-2">
-    {eje.neumaticos
-      .sort((a, b) => a.posicion_global - b.posicion_global)
-      .map((neumatico) => {
-        const llanta = formData.neumaticos.find(l => l.posicion === neumatico.posicion_global);
-        const tieneProblema = llanta?.presion_estado === 'Mal' || llanta?.callo_estado === 'Mal';
-        
-        return (
-          <div 
-            key={neumatico.posicion_global}
-            className={`border-2 rounded-lg p-3 ${
-              tieneProblema ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'
-            }`}
-          >
-            {/* Header: Posición + Eje */}
-            <div className="flex items-center gap-2 mb-3">
-              <div className={`w-10 h-10 rounded flex items-center justify-center font-bold ${
-                tieneProblema ? 'bg-red-200 text-red-900' : 'bg-gray-200 text-gray-900'
-              }`}>
-                {neumatico.posicion_global}
-              </div>
-              <div className="text-xs text-gray-600 capitalize">
-                Eje {eje.numero} • {neumatico.lado}
-              </div>
-            </div>
+                            {/* Mobile: Mini-cards compactos */}
+                            <div className="md:hidden space-y-2">
+                              {eje.neumaticos
+                                .sort((a, b) => a.posicion_global - b.posicion_global)
+                                .map((neumatico) => {
+                                  const llanta = formData.neumaticos.find(l => l.posicion === neumatico.posicion_global);
+                                  const tieneProblema = llanta?.presion_estado === 'Mal' || llanta?.callo_estado === 'Mal';
+                                  
+                                  return (
+                                    <div 
+                                      key={neumatico.posicion_global}
+                                      className={`border-2 rounded-lg p-3 ${
+                                        tieneProblema ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'
+                                      }`}
+                                    >
+                                      {/* Header: Posición + Eje */}
+                                      <div className="flex items-center gap-2 mb-3">
+                                        <div className={`w-10 h-10 rounded flex items-center justify-center font-bold ${
+                                          tieneProblema ? 'bg-red-200 text-red-900' : 'bg-gray-200 text-gray-900'
+                                        }`}>
+                                          {neumatico.posicion_global}
+                                        </div>
+                                        <div className="text-xs text-gray-600 capitalize">
+                                          Eje {eje.numero} • {neumatico.lado}
+                                        </div>
+                                      </div>
 
-            {/* Grid 2x2: Presión y Callo */}
-            <div className="grid grid-cols-2 gap-3">
-              {/* Presión */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Presión (PSI)
-                </label>
-                <div className="flex gap-1">
-                  <input
-                    type="number"
-                    value={llanta?.presion_medida || ''}
-                    onChange={(e) => handleNeumaticoChange(neumatico.posicion_global, 'presion_medida', parseFloat(e.target.value) || 0)}
-                    min="0"
-                    max="200"
-                    step="0.5"
-                    className="flex-1 px-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-gray-900"
-                    placeholder="95"
-                  />
-                  <div className="flex gap-1">
-                    <button
-                      type="button"
-                      onClick={() => handleNeumaticoChange(neumatico.posicion_global, 'presion_estado', 'Bien')}
-                      className={`w-8 h-8 rounded flex items-center justify-center ${
-                        llanta?.presion_estado === 'Bien' ? 'bg-green-600 text-white' : 'bg-white border-2 border-gray-200'
-                      }`}
-                    >
-                      ✓
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleNeumaticoChange(neumatico.posicion_global, 'presion_estado', 'Mal')}
-                      className={`w-8 h-8 rounded flex items-center justify-center ${
-                        llanta?.presion_estado === 'Mal' ? 'bg-red-600 text-white' : 'bg-white border-2 border-gray-200'
-                      }`}
-                    >
-                      ✗
-                    </button>
-                  </div>
-                </div>
-              </div>
+                                      {/* Grid 2x2: Presión y Callo */}
+                                      <div className="grid grid-cols-2 gap-3">
+                                        {/* Presión */}
+                                        <div>
+                                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                                            Presión (PSI)
+                                          </label>
+                                          <div className="flex gap-1">
+                                            <input
+                                              type="number"
+                                              value={llanta?.presion_medida || ''}
+                                              onChange={(e) => handleNeumaticoChange(neumatico.posicion_global, 'presion_medida', parseFloat(e.target.value) || 0)}
+                                              min="0"
+                                              max="200"
+                                              step="0.5"
+                                              className="flex-1 px-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-gray-900"
+                                              placeholder="95"
+                                            />
+                                            <div className="flex gap-1">
+                                              <button
+                                                type="button"
+                                                onClick={() => handleNeumaticoChange(neumatico.posicion_global, 'presion_estado', 'Bien')}
+                                                className={`w-8 h-8 rounded flex items-center justify-center ${
+                                                  llanta?.presion_estado === 'Bien' ? 'bg-green-600 text-white' : 'bg-white border-2 border-gray-200'
+                                                }`}
+                                              >
+                                                ✓
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleNeumaticoChange(neumatico.posicion_global, 'presion_estado', 'Mal')}
+                                                className={`w-8 h-8 rounded flex items-center justify-center ${
+                                                  llanta?.presion_estado === 'Mal' ? 'bg-red-600 text-white' : 'bg-white border-2 border-gray-200'
+                                                }`}
+                                              >
+                                                ✗
+                                              </button>
+                                            </div>
+                                          </div>
+                                        </div>
 
-              {/* Callo */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Callo (mm)
-                </label>
-                <div className="flex gap-1">
-                  <input
-                    type="number"
-                    value={llanta?.callo_medida || ''}
-                    onChange={(e) => handleNeumaticoChange(neumatico.posicion_global, 'callo_medida', parseFloat(e.target.value) || 0)}
-                    min="0"
-                    max="30"
-                    step="0.1"
-                    className="flex-1 px-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-gray-900"
-                    placeholder="8"
-                  />
-                  <div className="flex gap-1">
-                    <button
-                      type="button"
-                      onClick={() => handleNeumaticoChange(neumatico.posicion_global, 'callo_estado', 'Bien')}
-                      className={`w-8 h-8 rounded flex items-center justify-center ${
-                        llanta?.callo_estado === 'Bien' ? 'bg-green-600 text-white' : 'bg-white border-2 border-gray-200'
-                      }`}
-                    >
-                      ✓
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleNeumaticoChange(neumatico.posicion_global, 'callo_estado', 'Mal')}
-                      className={`w-8 h-8 rounded flex items-center justify-center ${
-                        llanta?.callo_estado === 'Mal' ? 'bg-red-600 text-white' : 'bg-white border-2 border-gray-200'
-                      }`}
-                    >
-                      ✗
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      })}
-  </div>
-</div>
+                                        {/* Callo */}
+                                        <div>
+                                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                                            Callo (mm)
+                                          </label>
+                                          <div className="flex gap-1">
+                                            <input
+                                              type="number"
+                                              value={llanta?.callo_medida || ''}
+                                              onChange={(e) => handleNeumaticoChange(neumatico.posicion_global, 'callo_medida', parseFloat(e.target.value) || 0)}
+                                              min="0"
+                                              max="30"
+                                              step="0.1"
+                                              className="flex-1 px-2 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-gray-900"
+                                              placeholder="8"
+                                            />
+                                            <div className="flex gap-1">
+                                              <button
+                                                type="button"
+                                                onClick={() => handleNeumaticoChange(neumatico.posicion_global, 'callo_estado', 'Bien')}
+                                                className={`w-8 h-8 rounded flex items-center justify-center ${
+                                                  llanta?.callo_estado === 'Bien' ? 'bg-green-600 text-white' : 'bg-white border-2 border-gray-200'
+                                                }`}
+                                              >
+                                                ✓
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleNeumaticoChange(neumatico.posicion_global, 'callo_estado', 'Mal')}
+                                                className={`w-8 h-8 rounded flex items-center justify-center ${
+                                                  llanta?.callo_estado === 'Mal' ? 'bg-red-600 text-white' : 'bg-white border-2 border-gray-200'
+                                                }`}
+                                              >
+                                                ✗
+                                              </button>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          </div>
 
                         </div>
                       ))}
@@ -1074,6 +1074,40 @@ const NuevaRevisionOperador = () => {
                   ></textarea>
                 </div>
               </div>
+
+              {/* 🆕 ANEXOS - Notas Importantes */}
+              {tipoRevision.anexos && tipoRevision.anexos.trim() !== '' && (
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                  <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-transparent">
+                    <div className="flex items-center gap-2">
+                      <svg className="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div>
+                        <h2 className="text-base font-semibold text-gray-900">Notas Importantes</h2>
+                        <p className="text-xs text-gray-500 mt-0.5">Lee atentamente antes de completar la revisión</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 sm:p-6">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="bg-white border border-blue-100 rounded-lg p-4">
+                        <div className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">
+                          {tipoRevision.anexos}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>Estas notas son solo informativas y no se guardan en la revisión</span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Alerta si hay problemas */}
               {tieneProblemas && (
