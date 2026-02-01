@@ -21,6 +21,7 @@ const EditarTipoRevision = () => {
     },
     requiere_licencia_vigente: false,
     permite_comentarios: false,
+    anexos: '',
     activo: true
   });
 
@@ -47,6 +48,7 @@ const EditarTipoRevision = () => {
         },
         requiere_licencia_vigente: data.requiere_licencia_vigente || false,
         permite_comentarios: data.permite_comentarios || false,
+        anexos: data.anexos || '',
         activo: data.activo !== undefined ? data.activo : true
       };
 
@@ -59,6 +61,23 @@ const EditarTipoRevision = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const insertarTemplateAnexos = () => {
+    const template = `Notas Generales:
+
+  • Los trabajos se realizarán en lo posible con equipo en paro cumpliendo las medidas de seguridad correspondientes (candadeo).
+
+  • Las purgas de trampas de agua en filtros de aire se harán con frecuencias de acuerdo a necesidades en sitio.
+
+  • Limpieza puntual y colocación de pintura en donde se requiera para evitar puntos y propagación de corrosión.
+
+  • En caso de anomalías en cualquiera de los puntos revisados se tendrán que corregir de acuerdo a su importancia de funcionamiento, así como de su programación si fuera el caso.
+
+  IMPORTANTE: Reportar de inmediato cualquier condición insegura o falla crítica al supervisor.`;
+    
+    setFormData(prev => ({ ...prev, anexos: template }));
+    showToast.success('Template insertado');
   };
 
   const handleSubmit = async (e) => {
@@ -568,6 +587,69 @@ const EditarTipoRevision = () => {
                   placeholder="Texto de ayuda para comentarios de neumáticos"
                 />
               )}
+            </div>
+          )}
+        </div>
+
+        {/* 🆕 ANEXOS - Notas Importantes */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h2 className="text-base font-semibold text-gray-900">
+                Anexos / Notas Importantes
+              </h2>
+              <p className="text-xs text-gray-600 mt-1">
+                Instrucciones que el operador debe leer antes de completar la revisión
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={insertarTemplateAnexos}
+              className="px-3 py-1.5 text-xs font-medium text-gray-700 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 rounded-lg transition-all border border-gray-200 flex items-center gap-1.5"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Insertar Template
+            </button>
+          </div>
+
+          <textarea
+            value={formData.anexos}
+            onChange={(e) => setFormData(prev => ({ ...prev, anexos: e.target.value }))}
+            rows={8}
+            className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all font-mono resize-y"
+            placeholder="Notas Generales:
+
+• Los trabajos se realizarán con equipo en paro...
+• Las purgas de trampas de agua...
+
+IMPORTANTE: Reportar cualquier anomalía..."
+          />
+
+          <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div className="flex gap-2">
+              <svg className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-xs text-blue-800">
+                Los anexos se mostrarán al operador al final del formulario de revisión. 
+                No se guardan en la revisión, solo son informativos.
+              </p>
+            </div>
+          </div>
+
+          {/* Vista previa (si hay contenido) */}
+          {formData.anexos && formData.anexos.trim() !== '' && (
+            <div className="mt-4">
+              <p className="text-xs font-medium text-gray-700 mb-2">Vista Previa:</p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="bg-white border border-blue-100 rounded-lg p-3">
+                  <div className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">
+                    {formData.anexos}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
