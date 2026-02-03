@@ -771,23 +771,38 @@ async function getVehiculosSinBitacoraHoy() {
       estado: 'activo' 
     }).select('placa numero_economico tipo_vehiculo');
     
-    // 2. Obtener inicio y fin del día de HOY
+   // 2. Obtener inicio y fin del día de HOY en hora de MÉXICO
     const hoy = new Date();
-    const inicioDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 0, 0, 0);
-    const finDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 23, 59, 59);
-    
-    console.log('[getVehiculosSinBitacoraHoy] Buscando revisiones entre:', inicioDia, 'y', finDia);
-    
+
+    // Ajustar a zona horaria de México (UTC-6)
+    // México está 6 horas atrás de UTC
+    const mexicoOffset = 6 * 60 * 60 * 1000; // 6 horas en milisegundos
+
+    // Calcular el inicio del día en hora local de México
+    const inicioDelDiaLocal = new Date(hoy);
+    inicioDelDiaLocal.setHours(0, 0, 0, 0);
+
+    // Convertir a UTC sumando el offset
+    const inicioDia = new Date(inicioDelDiaLocal.getTime() + mexicoOffset);
+
+    // Calcular el fin del día en hora local de México
+    const finDelDiaLocal = new Date(hoy);
+    finDelDiaLocal.setHours(23, 59, 59, 999);
+
+    // Convertir a UTC sumando el offset
+    const finDia = new Date(finDelDiaLocal.getTime() + mexicoOffset);
+
+    console.log('[getVehiculosSinBitacoraHoy] HOY en México:', hoy.toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }));
+    console.log('[getVehiculosSinBitacoraHoy] Buscando revisiones UTC desde:', inicioDia, 'hasta:', finDia);
+
     // 3. Obtener revisiones diarias de HOY
     const revisionesHoy = await Revision.find({
       frecuencia: 'diaria',
-      fecha: {
+      createdAt: {
         $gte: inicioDia,
         $lte: finDia
       }
-    }).select('vehiculo');
-    
-    console.log('[getVehiculosSinBitacoraHoy] Revisiones encontradas hoy:', revisionesHoy.length);
+    }).select('vehiculo createdAt');
     
     // 4. Crear Set de IDs de vehículos que SÍ hicieron bitácora hoy
     const vehiculosConBitacora = new Set(
