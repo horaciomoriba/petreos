@@ -212,14 +212,21 @@ OPCIONES DE PERSONALIZACIÓN:
   ❗ 2️⃣ VEHÍCULOS SIN BITÁCORA HOY:
     Función: getVehiculosSinBitacoraHoy()
     
-    Usa cuando pregunten:
+    🚨 SIEMPRE USA ESTA FUNCIÓN cuando pregunten:
     • "¿Quién no ha hecho bitácora?"
+    • "¿Quién no ha hecho bitácora hoy?"
     • "Vehículos sin revisión hoy"
     • "¿Quién falta por hacer bitácora?"
     • "Pendientes del día"
     • "¿Qué vehículos no han hecho su revisión diaria?"
+    • "¿Quiénes la realizaron hoy?"
+    • "¿Quién hizo bitácora hoy?"
     
-    Son vehículos que AÚN NO HAN HECHO su revisión diaria del día de hoy.
+    Esta función muestra:
+    - Vehículos que AÚN NO HAN HECHO su revisión diaria HOY
+    - Vehículos que SÍ la hicieron HOY
+    - Total de vehículos activos
+    - Días desde última bitácora de cada vehículo
 
   ⚠️ CUANDO EL USUARIO DIGA SOLO "REVISIONES PENDIENTES":
   Pregunta cuál de los dos tipos le interesa:
@@ -230,8 +237,9 @@ OPCIONES DE PERSONALIZACIÓN:
 
   OTRAS FUNCIONES DE REVISIONES:
 
-  - getUltimasRevisionesDiarias() - Última revisión diaria de TODOS los vehículos
-    Úsala para preguntas como: "¿quién no ha hecho bitácora?", "vehículos sin revisión"
+  - getUltimasRevisionesDiarias() - Última revisión diaria de TODOS los vehículos (histórico)
+    ⚠️ NO USAR para "¿quién no ha hecho bitácora HOY?"
+    Úsala SOLO para: "historial de revisiones", "últimas revisiones de todos"
   - getUltimaRevisionPorTipo(identificador, tipo) - Última revisión de UN vehículo
     Úsala cuando pregunten: "cuándo fue la última revisión de X", "última diaria del DEMO1"
   - buscarRevisiones(filtros) - Búsqueda flexible con múltiples filtros
@@ -924,7 +932,7 @@ const functions = [
   },
   {
     name: 'getVehiculosSinBitacoraHoy',
-    description: 'Obtiene la lista de vehículos que NO han realizado su BITÁCORA DIARIA el día de HOY. Muestra cuántos días han pasado desde su última bitácora. Útil para identificar vehículos que no están operando o que olvidaron hacer su revisión diaria. Usa esta función cuando pregunten: "¿Quién no ha hecho bitácora?", "vehículos sin revisión hoy", "¿Quién falta por hacer bitácora?", "pendientes del día"',
+    description: 'FUNCIÓN PRINCIPAL para detectar bitácoras del DÍA DE HOY. Obtiene: (1) Vehículos que NO han hecho bitácora HOY, (2) Vehículos que SÍ la hicieron HOY, (3) Total de vehículos activos. USA SIEMPRE cuando pregunten sobre bitácoras del día actual: "¿Quién no ha hecho bitácora?", "¿Quién no ha hecho bitácora hoy?", "vehículos sin revisión hoy", "¿Quién falta por hacer bitácora?", "pendientes del día", "¿quiénes la realizaron hoy?"',
     parameters: {
       type: 'object',
       properties: {},
