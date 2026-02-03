@@ -210,6 +210,23 @@ OPCIONES DE PERSONALIZACIÓN:
     Son revisiones YA REALIZADAS por operadores esperando aprobación del admin.
 
   ❗ 2️⃣ VEHÍCULOS SIN BITÁCORA HOY:
+   Función: getVehiculosSinBitacoraHoy()
+   
+   🚨 SIEMPRE USA ESTA FUNCIÓN cuando pregunten:
+   • "¿Quién no ha hecho bitácora?"
+   • "¿Quién no ha hecho bitácora hoy?"
+   • "Vehículos sin revisión hoy"
+   • "¿Quién falta por hacer bitácora?"
+   • "Pendientes del día"
+   • "¿Qué vehículos no han hecho su revisión diaria?"
+   • "¿Quiénes la realizaron hoy?"
+   • "¿Quién hizo bitácora hoy?"
+   
+   📊 CÓMO INTERPRETAR LA RESPUESTA:
+   - Si "vehiculos_sin_bitacora_hoy" > 0 → HAY VEHÍCULOS PENDIENTES
+   - Si "vehiculos_sin_bitacora_hoy" = 0 → TODOS COMPLETARON
+   - Lee el campo "mensaje_resumen" primero
+   - Si hay vehículos sin bitácora, lista los detalles del array "detalles_vehiculos_sin_bitacora" 2️⃣ VEHÍCULOS SIN BITÁCORA HOY:
     Función: getVehiculosSinBitacoraHoy()
     
     🚨 SIEMPRE USA ESTA FUNCIÓN cuando pregunten:
@@ -759,6 +776,8 @@ async function getVehiculosSinBitacoraHoy() {
     const inicioDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 0, 0, 0);
     const finDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 23, 59, 59);
     
+    console.log('[getVehiculosSinBitacoraHoy] Buscando revisiones entre:', inicioDia, 'y', finDia);
+    
     // 3. Obtener revisiones diarias de HOY
     const revisionesHoy = await Revision.find({
       frecuencia: 'diaria',
@@ -767,6 +786,8 @@ async function getVehiculosSinBitacoraHoy() {
         $lte: finDia
       }
     }).select('vehiculo');
+    
+    console.log('[getVehiculosSinBitacoraHoy] Revisiones encontradas hoy:', revisionesHoy.length);
     
     // 4. Crear Set de IDs de vehículos que SÍ hicieron bitácora hoy
     const vehiculosConBitacora = new Set(
@@ -777,6 +798,10 @@ async function getVehiculosSinBitacoraHoy() {
     const vehiculosSinBitacora = vehiculosActivos.filter(
       v => !vehiculosConBitacora.has(v._id.toString())
     );
+    
+    console.log('[getVehiculosSinBitacoraHoy] Vehículos activos:', vehiculosActivos.length);
+    console.log('[getVehiculosSinBitacoraHoy] Con bitácora hoy:', vehiculosConBitacora.size);
+    console.log('[getVehiculosSinBitacoraHoy] Sin bitácora hoy:', vehiculosSinBitacora.length);
     
     // 6. Para cada vehículo sin bitácora, obtener su última revisión diaria
     const detalles = await Promise.all(
@@ -814,17 +839,34 @@ async function getVehiculosSinBitacoraHoy() {
       return diasB - diasA;
     });
     
+    // 8. Construir mensaje claro para OpenAI
+    const mensaje = vehiculosSinBitacora.length === 0
+      ? `✅ TODOS los ${vehiculosActivos.length} vehículos activos HAN COMPLETADO su bitácora diaria hoy.`
+      : `⚠️ HAY ${vehiculosSinBitacora.length} VEHÍCULOS SIN BITÁCORA HOY de un total de ${vehiculosActivos.length} vehículos activos.`;
+    
     return {
+      // Campo CRÍTICO para que OpenAI entienda
+      mensaje_resumen: mensaje,
+      
+      // Datos numéricos
       total_vehiculos_activos: vehiculosActivos.length,
       vehiculos_con_bitacora_hoy: vehiculosConBitacora.size,
       vehiculos_sin_bitacora_hoy: vehiculosSinBitacora.length,
+      
+      // Contexto temporal
       fecha_consulta: hoy.toLocaleDateString('es-MX', { 
         weekday: 'long', 
         year: 'numeric', 
         month: 'long', 
         day: 'numeric' 
       }),
-      detalles_vehiculos_sin_bitacora: detalles
+      
+      // Detalles
+      detalles_vehiculos_sin_bitacora: detalles,
+      
+      // Flags booleanos claros
+      hay_vehiculos_sin_bitacora: vehiculosSinBitacora.length > 0,
+      todos_completaron_bitacora: vehiculosSinBitacora.length === 0
     };
   } catch (error) {
     console.error('Error en getVehiculosSinBitacoraHoy:', error);
