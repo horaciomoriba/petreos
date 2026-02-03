@@ -766,35 +766,23 @@ async function buscarRevisiones(filtros) {
  */
 async function getVehiculosSinBitacoraHoy() {
   try {
-    // 1. Obtener TODOS los vehículos activos
+    // 1. Obtener TODOS los vehículos no eliminados
     const vehiculosActivos = await Vehiculo.find({ 
-      estado: 'activo' 
+      eliminado: { $ne: true }  // ← CAMBIO AQUÍ
     }).select('placa numero_economico tipo_vehiculo');
     
-   // 2. Obtener inicio y fin del día de HOY en hora de MÉXICO
-    const hoy = new Date();
-
-    // Ajustar a zona horaria de México (UTC-6)
-    // México está 6 horas atrás de UTC
-    const mexicoOffset = 6 * 60 * 60 * 1000; // 6 horas en milisegundos
-
-    // Calcular el inicio del día en hora local de México
-    const inicioDelDiaLocal = new Date(hoy);
-    inicioDelDiaLocal.setHours(0, 0, 0, 0);
-
-    // Convertir a UTC sumando el offset
-    const inicioDia = new Date(inicioDelDiaLocal.getTime() + mexicoOffset);
-
-    // Calcular el fin del día en hora local de México
-    const finDelDiaLocal = new Date(hoy);
-    finDelDiaLocal.setHours(23, 59, 59, 999);
-
-    // Convertir a UTC sumando el offset
-    const finDia = new Date(finDelDiaLocal.getTime() + mexicoOffset);
-
-    console.log('[getVehiculosSinBitacoraHoy] HOY en México:', hoy.toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }));
-    console.log('[getVehiculosSinBitacoraHoy] Buscando revisiones UTC desde:', inicioDia, 'hasta:', finDia);
-
+    // 2. Obtener inicio y fin del día de HOY en zona horaria de México
+    const timeZone = 'America/Mexico_City';
+    
+    const inicioDia = moment.tz(timeZone).startOf('day').toDate();
+    const finDia = moment.tz(timeZone).endOf('day').toDate();
+    
+    const hoy = moment.tz(timeZone).toDate();
+    
+    console.log('[getVehiculosSinBitacoraHoy] HOY en México:', moment.tz(timeZone).format('YYYY-MM-DD HH:mm:ss'));
+    console.log('[getVehiculosSinBitacoraHoy] Buscando desde:', inicioDia);
+    console.log('[getVehiculosSinBitacoraHoy] Buscando hasta:', finDia);
+    
     // 3. Obtener revisiones diarias de HOY
     const revisionesHoy = await Revision.find({
       frecuencia: 'diaria',
@@ -803,6 +791,13 @@ async function getVehiculosSinBitacoraHoy() {
         $lte: finDia
       }
     }).select('vehiculo createdAt');
+    
+    console.log('[getVehiculosSinBitacoraHoy] Revisiones encontradas hoy:', revisionesHoy.length);
+    if (revisionesHoy.length > 0) {
+      revisionesHoy.forEach(rev => {
+        console.log('[getVehiculosSinBitacoraHoy] Revisión creada:', moment(rev.createdAt).tz(timeZone).format('YYYY-MM-DD HH:mm:ss'));
+      });
+    }
     
     // 4. Crear Set de IDs de vehículos que SÍ hicieron bitácora hoy
     const vehiculosConBitacora = new Set(
@@ -825,12 +820,12 @@ async function getVehiculosSinBitacoraHoy() {
           vehiculo: v._id,
           frecuencia: 'diaria'
         })
-          .sort({ fecha: -1 })
-          .select('fecha operador');
+          .sort({ createdAt: -1 })
+          .select('createdAt operador');
         
         let diasSinBitacora = null;
         if (ultimaBitacora) {
-          const diffTime = Math.abs(hoy - new Date(ultimaBitacora.fecha));
+          const diffTime = Math.abs(hoy - new Date(ultimaBitacora.createdAt));
           diasSinBitacora = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         }
         
@@ -839,7 +834,7 @@ async function getVehiculosSinBitacoraHoy() {
           numero_economico: v.numero_economico,
           tipo: v.tipo_vehiculo,
           ultima_bitacora: ultimaBitacora ? {
-            fecha: ultimaBitacora.fecha,
+            fecha: ultimaBitacora.createdAt,
             operador: ultimaBitacora.operador?.nombre || 'N/A'
           } : null,
           dias_sin_bitacora: diasSinBitacora || 'Sin historial'
@@ -860,26 +855,12 @@ async function getVehiculosSinBitacoraHoy() {
       : `⚠️ HAY ${vehiculosSinBitacora.length} VEHÍCULOS SIN BITÁCORA HOY de un total de ${vehiculosActivos.length} vehículos activos.`;
     
     return {
-      // Campo CRÍTICO para que OpenAI entienda
       mensaje_resumen: mensaje,
-      
-      // Datos numéricos
       total_vehiculos_activos: vehiculosActivos.length,
       vehiculos_con_bitacora_hoy: vehiculosConBitacora.size,
       vehiculos_sin_bitacora_hoy: vehiculosSinBitacora.length,
-      
-      // Contexto temporal
-      fecha_consulta: hoy.toLocaleDateString('es-MX', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      }),
-      
-      // Detalles
+      fecha_consulta: moment.tz(timeZone).format('dddd, D [de] MMMM [de] YYYY'),
       detalles_vehiculos_sin_bitacora: detalles,
-      
-      // Flags booleanos claros
       hay_vehiculos_sin_bitacora: vehiculosSinBitacora.length > 0,
       todos_completaron_bitacora: vehiculosSinBitacora.length === 0
     };
