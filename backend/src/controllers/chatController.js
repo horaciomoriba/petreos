@@ -196,8 +196,40 @@ OPCIONES DE PERSONALIZACIÓN:
     Úsala cuando pregunten por UN vehículo específico por placa o número económico
     Ejemplo: "datos del DEMO1", "info del ABC-123"
 
-  REVISIONES:
-  - getRevisionsPendientes() - Solo revisiones sin aprobar
+  REVISIONES - ⚠️ IMPORTANTE DIFERENCIAR DOS TIPOS DE "PENDIENTES":
+
+  ❗ 1️⃣ REVISIONES COMPLETADAS PENDIENTES DE APROBACIÓN:
+    Función: getRevisionsPendientes()
+    
+    Usa cuando pregunten:
+    • "¿Qué revisiones debo aprobar?"
+    • "Revisiones sin aprobar"
+    • "Revisiones completadas pendientes"
+    • "Revisiones por revisar"
+    
+    Son revisiones YA REALIZADAS por operadores esperando aprobación del admin.
+
+  ❗ 2️⃣ VEHÍCULOS SIN BITÁCORA HOY:
+    Función: getVehiculosSinBitacoraHoy()
+    
+    Usa cuando pregunten:
+    • "¿Quién no ha hecho bitácora?"
+    • "Vehículos sin revisión hoy"
+    • "¿Quién falta por hacer bitácora?"
+    • "Pendientes del día"
+    • "¿Qué vehículos no han hecho su revisión diaria?"
+    
+    Son vehículos que AÚN NO HAN HECHO su revisión diaria del día de hoy.
+
+  ⚠️ CUANDO EL USUARIO DIGA SOLO "REVISIONES PENDIENTES":
+  Pregunta cuál de los dos tipos le interesa:
+  "Puedo mostrarte dos cosas:
+  1️⃣ Revisiones ya realizadas que necesitan tu aprobación
+  2️⃣ Vehículos que aún no han hecho su bitácora diaria hoy
+  ¿Cuál te interesa?"
+
+  OTRAS FUNCIONES DE REVISIONES:
+
   - getUltimasRevisionesDiarias() - Última revisión diaria de TODOS los vehículos
     Úsala para preguntas como: "¿quién no ha hecho bitácora?", "vehículos sin revisión"
   - getUltimaRevisionPorTipo(identificador, tipo) - Última revisión de UN vehículo
@@ -704,6 +736,94 @@ async function buscarRevisiones(filtros) {
   }
 }
 
+/**
+ * 🆕 NUEVA: Vehículos que NO han hecho bitácora diaria HOY
+ */
+async function getVehiculosSinBitacoraHoy() {
+  try {
+    // 1. Obtener TODOS los vehículos activos
+    const vehiculosActivos = await Vehiculo.find({ 
+      estado: 'activo' 
+    }).select('placa numero_economico tipo_vehiculo');
+    
+    // 2. Obtener inicio y fin del día de HOY
+    const hoy = new Date();
+    const inicioDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 0, 0, 0);
+    const finDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 23, 59, 59);
+    
+    // 3. Obtener revisiones diarias de HOY
+    const revisionesHoy = await Revision.find({
+      frecuencia: 'diaria',
+      fecha: {
+        $gte: inicioDia,
+        $lte: finDia
+      }
+    }).select('vehiculo');
+    
+    // 4. Crear Set de IDs de vehículos que SÍ hicieron bitácora hoy
+    const vehiculosConBitacora = new Set(
+      revisionesHoy.map(r => r.vehiculo.toString())
+    );
+    
+    // 5. Filtrar vehículos que NO están en el set
+    const vehiculosSinBitacora = vehiculosActivos.filter(
+      v => !vehiculosConBitacora.has(v._id.toString())
+    );
+    
+    // 6. Para cada vehículo sin bitácora, obtener su última revisión diaria
+    const detalles = await Promise.all(
+      vehiculosSinBitacora.map(async (v) => {
+        const ultimaBitacora = await Revision.findOne({
+          vehiculo: v._id,
+          frecuencia: 'diaria'
+        })
+          .sort({ fecha: -1 })
+          .select('fecha operador');
+        
+        let diasSinBitacora = null;
+        if (ultimaBitacora) {
+          const diffTime = Math.abs(hoy - new Date(ultimaBitacora.fecha));
+          diasSinBitacora = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }
+        
+        return {
+          placa: v.placa,
+          numero_economico: v.numero_economico,
+          tipo: v.tipo_vehiculo,
+          ultima_bitacora: ultimaBitacora ? {
+            fecha: ultimaBitacora.fecha,
+            operador: ultimaBitacora.operador?.nombre || 'N/A'
+          } : null,
+          dias_sin_bitacora: diasSinBitacora || 'Sin historial'
+        };
+      })
+    );
+    
+    // 7. Ordenar por días sin bitácora (mayor a menor)
+    detalles.sort((a, b) => {
+      const diasA = typeof a.dias_sin_bitacora === 'number' ? a.dias_sin_bitacora : 9999;
+      const diasB = typeof b.dias_sin_bitacora === 'number' ? b.dias_sin_bitacora : 9999;
+      return diasB - diasA;
+    });
+    
+    return {
+      total_vehiculos_activos: vehiculosActivos.length,
+      vehiculos_con_bitacora_hoy: vehiculosConBitacora.size,
+      vehiculos_sin_bitacora_hoy: vehiculosSinBitacora.length,
+      fecha_consulta: hoy.toLocaleDateString('es-MX', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      }),
+      detalles_vehiculos_sin_bitacora: detalles
+    };
+  } catch (error) {
+    console.error('Error en getVehiculosSinBitacoraHoy:', error);
+    throw error;
+  }
+}
+
 // ============================================
 // 🆕 FUNCIONES DE REPORTES - AHORA USA generateSmartReport
 // ============================================
@@ -796,6 +916,15 @@ const functions = [
   {
     name: 'getRevisionsPendientes',
     description: 'Obtiene revisiones completadas pero pendientes de aprobación por el administrador',
+    parameters: {
+      type: 'object',
+      properties: {},
+      required: []
+    }
+  },
+  {
+    name: 'getVehiculosSinBitacoraHoy',
+    description: 'Obtiene la lista de vehículos que NO han realizado su BITÁCORA DIARIA el día de HOY. Muestra cuántos días han pasado desde su última bitácora. Útil para identificar vehículos que no están operando o que olvidaron hacer su revisión diaria. Usa esta función cuando pregunten: "¿Quién no ha hecho bitácora?", "vehículos sin revisión hoy", "¿Quién falta por hacer bitácora?", "pendientes del día"',
     parameters: {
       type: 'object',
       properties: {},
@@ -1160,6 +1289,9 @@ export const sendMessage = async (req, res) => {
           break;
         case 'getRevisionsPendientes':
           functionResult = await getRevisionsPendientes();
+          break;
+        case 'getVehiculosSinBitacoraHoy':
+          functionResult = await getVehiculosSinBitacoraHoy();
           break;
         case 'getVehiculosConProblemas':
           functionResult = await getVehiculosConProblemas(functionArgs.dias);

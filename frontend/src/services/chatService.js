@@ -42,16 +42,17 @@ export const chatService = {
       role: 'assistant',
       content: `¡Hola! Soy el asistente de Petreos 🚗
 
-¿En qué puedo ayudarte hoy? Puedo darte información sobre:
+  ¿En qué puedo ayudarte hoy? Puedo darte información sobre:
 
-- Estado general de la flota
-- Revisiones pendientes de aprobación
-- Vehículos con problemas recurrentes
-- Reparaciones recientes
-- Consumo de combustible
-- Estadísticas y métricas clave
+  - Estado general de la flota
+  - Revisiones pendientes de aprobación ✅
+  - Vehículos sin bitácora del día 🚗
+  - Vehículos con problemas recurrentes
+  - Reparaciones recientes
+  - Consumo de combustible
+  - Reportes avanzados con gráficas
 
-¿Qué te gustaría consultar?`,
+  ¿Qué te gustaría consultar?`,
       timestamp: new Date().toISOString()
     };
   },
@@ -234,33 +235,33 @@ export const chatService = {
 export const QUICK_SUGGESTIONS = [
   { 
     id: 1, 
-    text: '¿Cuántas revisiones pendientes hay?',
-    icon: '📋'
+    text: '¿Qué revisiones debo aprobar?',
+    icon: '✅'
   },
   { 
     id: 2, 
+    text: '¿Quién no ha hecho bitácora hoy?',
+    icon: '🚗'
+  },
+  { 
+    id: 3, 
     text: 'Dame estadísticas de la flota',
     icon: '📊' 
   },
   { 
-    id: 3, 
+    id: 4, 
     text: 'Vehículos con más problemas',
     icon: '⚠️' 
   },
   { 
-    id: 4, 
+    id: 5, 
     text: 'Excel de revisiones con gráficas',
     icon: '📈' 
   },
   { 
-    id: 5, 
+    id: 6, 
     text: 'Comparativa de costos por vehículo',
     icon: '💰' 
-  },
-  { 
-    id: 6, 
-    text: 'Dashboard ejecutivo de la flota',
-    icon: '🎯' 
   }
 ];
 
