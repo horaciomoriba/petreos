@@ -1,10 +1,16 @@
 import ExcelJS from 'exceljs';
 import fs from 'fs';
 import path from 'path';
+import moment from 'moment-timezone';
 import Revision from '../models/revision.js';
 import Reparacion from '../models/reparacion.js';
 import CargaCombustible from '../models/cargacombustible.js';
 import Vehiculo from '../models/vehiculo.js';
+
+// ============================================
+// 🌍 CONFIGURACIÓN DE ZONA HORARIA
+// ============================================
+const TIMEZONE_MEXICO = 'America/Mexico_City';
 
 /**
  * 🎯 GENERADOR INTELIGENTE DE REPORTES
@@ -554,21 +560,19 @@ function formatMetricName(key) {
 
 function formatDate(date) {
   if (!date) return 'N/A';
-  return new Date(date).toLocaleDateString('es-MX', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  });
+  return moment(date).tz(TIMEZONE_MEXICO).locale('es').format('DD MMM YYYY');
 }
 
 function extractValue(item, path, format) {
   // Navegar por el path (ej: 'vehiculo.placa')
   const value = path.split('.').reduce((obj, key) => obj?.[key], item);
   
-  if (!value) return 'N/A';
+  if (!value && value !== 0 && value !== false) return 'N/A';
   
   // Aplicar formato
-  if (format === 'date') return formatDate(value);
+  if (format === 'date') {
+    return moment(value).tz(TIMEZONE_MEXICO).locale('es').format('DD/MM/YYYY HH:mm');
+  }
   if (format === 'currency') return `$${Number(value).toFixed(2)}`;
   if (format === 'boolean') return value ? 'Sí' : 'No';
   
@@ -585,7 +589,7 @@ function getColumnsForDataType(tipo, customColumns) {
   // Columnas por defecto según tipo
   const columnsMap = {
     revisiones: [
-      { header: 'Fecha', key: 'fecha', path: 'fecha', format: 'date', width: 12 },
+      { header: 'Fecha', key: 'fecha', path: 'fecha', format: 'date', width: 18 },
       { header: 'Placa', key: 'placa', path: 'vehiculo.placa', width: 10 },
       { header: 'No. Económico', key: 'numero_economico', path: 'vehiculo.numero_economico', width: 15 },
       { header: 'Tipo Revisión', key: 'tipo', path: 'tipo_revision.nombre', width: 20 },
@@ -599,7 +603,7 @@ function getColumnsForDataType(tipo, customColumns) {
     ],
     
     reparaciones: [
-      { header: 'Fecha', key: 'fecha', path: 'fecha', format: 'date', width: 12 },
+      { header: 'Fecha', key: 'fecha', path: 'fecha', format: 'date', width: 18 },
       { header: 'Placa', key: 'placa', path: 'vehiculo.placa', width: 10 },
       { header: 'No. Económico', key: 'numero_economico', path: 'vehiculo.numero_economico', width: 15 },
       { header: 'Categoría', key: 'categoria', path: 'categoria', width: 15 },
@@ -611,7 +615,7 @@ function getColumnsForDataType(tipo, customColumns) {
     ],
     
     combustible: [
-      { header: 'Fecha', key: 'fecha', path: 'fecha', format: 'date', width: 12 },
+      { header: 'Fecha', key: 'fecha', path: 'fecha', format: 'date', width: 18 },
       { header: 'Placa', key: 'placa', path: 'vehiculo.placa', width: 10 },
       { header: 'No. Económico', key: 'numero_economico', path: 'vehiculo.numero_economico', width: 15 },
       { header: 'Tipo Combustible', key: 'tipo', path: 'tipo_combustible', width: 15 },
