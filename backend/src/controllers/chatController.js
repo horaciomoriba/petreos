@@ -365,7 +365,7 @@ async function getFleetStats() {
 
 async function getVehicles(filters = {}) {
   try {
-    let query = {};
+    let query = { eliminado: { $ne: true } }; // Solo vehículos no eliminados
     
     if (filters.placa) {
       query.placa = new RegExp(filters.placa, 'i');
@@ -373,6 +373,12 @@ async function getVehicles(filters = {}) {
     
     if (filters.tipo_vehiculo) {
       query.tipo_vehiculo = new RegExp(filters.tipo_vehiculo, 'i');
+    }
+    
+    // Filtro por disponibilidad/estado
+    if (filters.disponibilidad || filters.estado) {
+      const estadoFiltro = filters.disponibilidad || filters.estado;
+      query.disponibilidad = estadoFiltro;
     }
     
     const vehiculos = await Vehiculo.find(query)
@@ -386,6 +392,8 @@ async function getVehicles(filters = {}) {
       modelo: v.modelo,
       kilometraje: v.kilometraje_actual,
       horas_motor: v.horas_motor_actual,
+      disponibilidad: v.disponibilidad, // ← AGREGAR ESTE CAMPO
+      estado: v.disponibilidad // ← ALIAS para que OpenAI entienda "estado"
     }));
   } catch (error) {
     console.error('Error en getVehicles:', error);
@@ -567,10 +575,11 @@ async function getVehiculoDetalle(identificador) {
         tipo: vehiculo.tipo_vehiculo,
         marca: vehiculo.marca,
         modelo: vehiculo.modelo,
-        año: vehiculo.año,
+        año: vehiculo.year, // ← CAMBIO: era "año" pero en el modelo es "year"
         kilometraje_actual: vehiculo.kilometraje_actual,
         horas_motor_actual: vehiculo.horas_motor_actual,
-        estado: vehiculo.estado
+        disponibilidad: vehiculo.disponibilidad, // ← CAMBIO
+        estado: vehiculo.disponibilidad // ← ALIAS
       },
       estadisticas: {
         total_revisiones: totalRevisiones,
@@ -960,7 +969,7 @@ const functions = [
   },
   {
     name: 'getVehicles',
-    description: 'Obtiene lista de vehículos con filtros opcionales por placa o tipo',
+    description: 'Obtiene lista de vehículos con filtros opcionales por placa, tipo, o disponibilidad/estado',
     parameters: {
       type: 'object',
       properties: {
@@ -970,7 +979,17 @@ const functions = [
         },
         tipo_vehiculo: {
           type: 'string',
-          description: 'Filtrar por tipo: Camión, Camioneta, Grúa, etc.'
+          description: 'Filtrar por tipo: olla_revolvedora, planta_de_concreto, cargador_frontal, camioneta_pickup, grua, bomba_de_concreto, automovil'
+        },
+        disponibilidad: {
+          type: 'string',
+          enum: ['disponible', 'en_servicio', 'mantenimiento', 'fuera_servicio'],
+          description: 'Filtrar por disponibilidad/estado del vehículo'
+        },
+        estado: {
+          type: 'string',
+          enum: ['disponible', 'en_servicio', 'mantenimiento', 'fuera_servicio'],
+          description: 'Alias de disponibilidad - filtra por estado del vehículo'
         }
       }
     }
