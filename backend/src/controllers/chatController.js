@@ -13,6 +13,20 @@ import User from '../models/user.js';
 // 🆕 IMPORTAR GENERADOR INTELIGENTE
 import { generateSmartReport } from '../utils/smartReportGenerator.js';
 
+// ============================================
+// 🌍 HELPER: Formatear fechas a zona horaria de México
+// ============================================
+
+const TIMEZONE_MEXICO = 'America/Mexico_City';
+
+/**
+ * Convierte una fecha UTC a formato legible en zona horaria de México
+ */
+function formatearFechaMexico(fecha, formato = 'D [de] MMMM [de] YYYY [a las] HH:mm') {
+  if (!fecha) return 'N/A';
+  return moment(fecha).tz(TIMEZONE_MEXICO).locale('es').format(formato);
+}
+
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // ============================================
@@ -395,7 +409,7 @@ async function getRevisionsPendientes() {
       vehiculo: `${r.vehiculo?.placa} (${r.vehiculo?.numero_economico})`,
       tipo: r.tipo_revision?.nombre || 'N/A',
       frecuencia: r.frecuencia || r.tipo_revision?.frecuencia,
-      fecha: r.fecha,
+      fecha: formatearFechaMexico(r.fecha),  // ← CAMBIO AQUÍ
       operador: r.operador?.nombre || 'N/A',
       tiene_problemas: r.tiene_problemas
     }));
@@ -471,7 +485,7 @@ async function getReparacionesRecientes(limite = 10) {
       categoria: r.categoria,
       descripcion: r.descripcion,
       costo_total: r.costo_total,
-      fecha: r.fecha,
+      fecha: formatearFechaMexico(r.fecha),  // ← CAMBIO AQUÍ
       estado: r.estado
     }));
   } catch (error) {
@@ -497,7 +511,7 @@ async function getConsumosCombustible(dias = 30) {
       litros: c.litros,
       costo: c.costo,
       rendimiento: c.rendimiento || 'N/A',
-      fecha: c.fecha,
+      fecha: formatearFechaMexico(c.fecha),  // ← CAMBIO AQUÍ
       tipo_combustible: c.tipo_combustible
     }));
   } catch (error) {
@@ -563,7 +577,7 @@ async function getVehiculoDetalle(identificador) {
         revisiones_con_problemas: revisionesConProblemas,
         reparaciones_ultimo_mes: reparacionesRecientes,
         ultima_revision: ultimaRevision ? {
-          fecha: ultimaRevision.fecha,
+          fecha: formatearFechaMexico(ultimaRevision.fecha),
           tipo: ultimaRevision.tipo_revision?.nombre,
           frecuencia: ultimaRevision.frecuencia,
           tiene_problemas: ultimaRevision.tiene_problemas,
@@ -623,7 +637,7 @@ async function getUltimaRevisionPorTipo(identificador, tipoFrecuencia) {
       encontrado: true,
       vehiculo: `${vehiculo.placa} (${vehiculo.numero_economico})`,
       ultima_revision: {
-        fecha: ultimaRevision.fecha,
+        fecha: formatearFechaMexico(ultimaRevision.fecha),
         dias_desde_ultima: diasDesde,
         tipo: ultimaRevision.tipo_revision?.nombre,
         frecuencia: ultimaRevision.frecuencia,
@@ -669,7 +683,7 @@ async function getUltimasRevisionesDiarias(limite = 20) {
         return {
           vehiculo: `${vehiculo.placa} (${vehiculo.numero_economico})`,
           ultima_revision: {
-            fecha: ultimaDiaria.fecha,
+            fecha: formatearFechaMexico(ultimaDiaria.fecha),
             tiene_problemas: ultimaDiaria.tiene_problemas,
             aprobada: ultimaDiaria.aprobada
           },
@@ -751,7 +765,7 @@ async function buscarRevisiones(filtros) {
       vehiculo: `${r.vehiculo?.placa} (${r.vehiculo?.numero_economico})`,
       tipo: r.tipo_revision?.nombre || 'N/A',
       frecuencia: r.frecuencia,
-      fecha: r.fecha,
+      fecha: formatearFechaMexico(r.fecha),
       operador: r.operador?.nombre || 'N/A',
       estado: r.estado,
       aprobada: r.aprobada,
@@ -836,7 +850,7 @@ async function getVehiculosSinBitacoraHoy() {
           numero_economico: v.numero_economico,
           tipo: v.tipo_vehiculo,
           ultima_bitacora: ultimaBitacora ? {
-            fecha: ultimaBitacora.createdAt,
+            fecha: formatearFechaMexico(ultimaBitacora.createdAt),
             operador: ultimaBitacora.operador?.nombre || 'N/A'
           } : null,
           dias_sin_bitacora: diasSinBitacora || 'Sin historial'
