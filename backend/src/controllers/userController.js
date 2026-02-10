@@ -23,7 +23,7 @@ export const getOperadores = async (req, res) => {
     
     const operadores = await User.find(filtros)
       .populate('sedeActual', 'nombre ciudad')
-      .populate('vehiculoAsignado', 'numeroEconomico placa tipo')
+      .populate('vehiculoAsignado', 'numero_economico placa tipo_vehiculo')
       .select('-password')
       .sort({ nombre: 1 });
     

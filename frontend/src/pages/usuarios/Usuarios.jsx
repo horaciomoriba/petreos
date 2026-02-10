@@ -39,6 +39,7 @@ const Usuarios = () => {
         if (filtroSede) filtros.sedeId = filtroSede;
         
         const response = await operadorService.getAll(filtros);
+        console.log("response", response)
         setOperadores(response.data);
       }
     } catch (error) {

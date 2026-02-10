@@ -62,11 +62,9 @@ const TablaOperadores = ({ operadores, onEliminar, onRecargar }) => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                       </svg>
                       <div>
+                        {/* ⭐ CAMBIO: numero_economico primero (destacado) */}
                         <div className="text-sm font-semibold text-primary-900">
-                          {operador.vehiculoAsignado.numeroEconomico}
-                        </div>
-                        <div className="text-xs text-primary-500">
-                          {operador.vehiculoAsignado.placa} • {operador.vehiculoAsignado.tipo}
+                          {operador.vehiculoAsignado.numero_economico}
                         </div>
                       </div>
                     </div>
@@ -158,9 +156,12 @@ const TablaOperadores = ({ operadores, onEliminar, onRecargar }) => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                   <div>
-                    <span className="font-semibold text-primary-900">{operador.vehiculoAsignado.numeroEconomico}</span>
+                    {/* ⭐ CAMBIO: numero_economico primero en mobile */}
+                    <span className="font-semibold text-primary-900">
+                      {operador.vehiculoAsignado.numeroEconomico || operador.vehiculoAsignado.numero_economico}
+                    </span>
                     <span className="text-xs text-primary-500 ml-1">
-                      {operador.vehiculoAsignado.placa} • {operador.vehiculoAsignado.tipo}
+                      {operador.vehiculoAsignado.placa} • {operador.vehiculoAsignado.tipo || operador.vehiculoAsignado.tipo_vehiculo}
                     </span>
                   </div>
                 </div>

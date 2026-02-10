@@ -239,8 +239,10 @@ const DetalleVehiculo = () => {
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{vehiculo.placa}</h1>
-              <span className="text-sm font-medium text-gray-500">#{vehiculo.numero_economico}</span>
+              {/* ⭐ CAMBIO: numero_economico como título principal */}
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{vehiculo.numero_economico}</h1>
+              {/* ⭐ CAMBIO: placa como secundario (sin #) */}
+              <span className="text-sm font-medium text-gray-500">{vehiculo.placa}</span>
             </div>
             <p className="text-sm text-gray-600 mb-3">
               {vehiculo.marca} {vehiculo.modelo}
@@ -641,7 +643,7 @@ const DetalleVehiculo = () => {
         onClose={() => setShowDeleteModal(false)}
         onConfirm={handleDelete}
         title="¿Eliminar vehículo?"
-        message={`Esta acción eliminará permanentemente el vehículo "${vehiculo.placa}".`}
+        message={`Esta acción eliminará permanentemente el vehículo "${vehiculo.numero_economico}".`}
         type="danger"
       />
     </div>

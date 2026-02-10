@@ -130,7 +130,7 @@ const Vehiculos = () => {
                 </svg>
                 <input
                   type="text"
-                  placeholder="Buscar placa, no. económico..."
+                  placeholder="Buscar no. económico, placa..."
                   value={filtros.busqueda}
                   onChange={(e) => setFiltros({ ...filtros, busqueda: e.target.value })}
                   className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg 
@@ -319,10 +319,10 @@ const Vehiculos = () => {
                   <thead>
                     <tr className="border-b border-gray-200">
                       <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-50">
-                        Placa
+                        No. Económico
                       </th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-50">
-                        No. Econ
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-50 hidden sm:table-cell">
+                        Placa
                       </th>
                       <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-50 hidden sm:table-cell">
                         Marca/Modelo
@@ -348,9 +348,19 @@ const Vehiculos = () => {
                         onClick={() => navigate(`/vehiculos/${vehiculo._id}`)}
                         className="hover:bg-gray-50 transition-colors cursor-pointer"
                       >
-                        {/* Placa */}
+                        {/* No. Económico - PRINCIPAL */}
                         <td className="px-4 py-3">
                           <div className="text-sm font-semibold text-gray-900">
+                            {vehiculo.numero_economico}
+                          </div>
+                          <div className="text-xs text-gray-500 sm:hidden">
+                            {vehiculo.placa}
+                          </div>
+                        </td>
+
+                        {/* Placa - SECUNDARIA (solo desktop) */}
+                        <td className="px-4 py-3 hidden sm:table-cell">
+                          <div className="text-sm text-gray-600">
                             {vehiculo.placa}
                           </div>
                           {vehiculo.year && (
@@ -358,13 +368,6 @@ const Vehiculos = () => {
                               {vehiculo.year}
                             </div>
                           )}
-                        </td>
-
-                        {/* No. Económico */}
-                        <td className="px-4 py-3">
-                          <span className="text-sm font-medium text-gray-700">
-                            #{vehiculo.numero_economico}
-                          </span>
                         </td>
 
                         {/* Marca/Modelo */}
