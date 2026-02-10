@@ -321,7 +321,7 @@ export const createRevision = async (req, res) => {
       'crear_revision',
       'admin',
       req.admin.nombre,
-      `Creó revisión ${tipoRevision.frecuencia} para vehículo ${vehiculo.placa}`
+      `Creó revisión ${tipoRevision.frecuencia} para vehículo ${vehiculo.numero_economico}`
     );
 
     console.log("========================================");
@@ -391,7 +391,7 @@ export const updateRevision = async (req, res) => {
       'actualizar_revision',
       'admin',
       req.admin.nombre,
-      `Actualizó revisión del vehículo ${revision.vehiculo.placa}`
+      `Actualizó revisión del vehículo ${revision.vehiculo.numero_economico}`
     );
 
     res.json({
@@ -554,16 +554,15 @@ export const deleteRevision = async (req, res) => {
       });
     }
 
-    const placaVehiculo = revision.vehiculo.placa; // Guardar antes de eliminar
+    const numeroEconomicoVehiculo = revision.vehiculo.numero_economico; // Guardar antes de eliminar
 
     await Revision.findByIdAndDelete(id);
 
-    // ⭐ REGISTRAR ACTIVIDAD
     await registrarActividad(
       'eliminar_revision',
       'admin',
       req.admin.nombre,
-      `Eliminó revisión del vehículo ${placaVehiculo}`
+      `Eliminó revisión del vehículo ${numeroEconomicoVehiculo}`
     );
 
     res.json({ 
@@ -619,7 +618,7 @@ export const aprobarRevision = async (req, res) => {
       'aprobar_revision',
       'admin',
       req.admin.nombre,
-      `Aprobó revisión ${revision.tipo_revision.frecuencia} del vehículo ${revision.vehiculo.placa}`
+      `Aprobó revisión ${revision.tipo_revision.frecuencia} del vehículo ${revision.vehiculo.numero_economico}`
     );
 
     // GENERAR PDF AUTOMÁTICAMENTE
@@ -784,7 +783,7 @@ export const regenerarPDFRevision = async (req, res) => {
       'actualizar_revision',
       'admin',
       req.admin.nombre,
-      `Regeneró PDF de revisión del vehículo ${revision.vehiculo.placa}`
+      `Regeneró PDF de revisión del vehículo ${revision.vehiculo.numero_economico}`
     );
 
     res.json({

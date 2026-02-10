@@ -120,7 +120,7 @@ export const registrarCarga = async (req, res) => {
       'crear_carga_combustible',
       'admin',
       userName,
-      `Registró carga de ${litros_cargados} lts de combustible para vehículo ${vehiculo.placa}`
+      `Registró carga de ${litros_cargados} lts de combustible para vehículo ${vehiculo.numero_economico}`
     );
 
     // Populate para respuesta
@@ -299,7 +299,7 @@ export const actualizarCarga = async (req, res) => {
       'actualizar_carga_combustible',
       'admin',
       userName,
-      `Actualizó carga de combustible del vehículo ${carga.vehiculo.placa}`
+      `Actualizó carga de combustible del vehículo ${carga.vehiculo.numero_economico}`
     );
 
     await carga.populate('vehiculo', 'placa numero_economico marca modelo');
@@ -343,7 +343,7 @@ export const eliminarCarga = async (req, res) => {
       'eliminar_carga_combustible',
       'admin',
       userName,
-      `Eliminó carga de combustible del vehículo ${carga.vehiculo.placa}`
+      `Eliminó carga de combustible del vehículo ${carga.vehiculo.numero_economico}`
     );
 
     res.status(200).json({

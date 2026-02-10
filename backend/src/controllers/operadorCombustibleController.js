@@ -98,7 +98,7 @@ export const registrarCarga = async (req, res) => {
       'crear_carga_combustible',
       'operador',
       req.operador.nombre,
-      `Registró carga de ${litros_cargados} lts de combustible para vehículo ${vehiculo.placa}`
+      `Registró carga de ${litros_cargados} lts de combustible para vehículo ${vehiculo.numero_economico}`
     );
 
     // Populate para respuesta

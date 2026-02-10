@@ -451,7 +451,7 @@ export const crearRevision = async (req, res) => {
       'crear_revision',
       'operador',
       req.operador.nombre,
-      `Creó revisión ${tipoRevision.frecuencia} para vehículo ${vehiculo.placa}`
+      `Creó revisión ${tipoRevision.frecuencia} para vehículo ${vehiculo.numero_economico}`
     );
 
     console.log("========================================");

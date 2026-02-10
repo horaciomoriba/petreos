@@ -74,7 +74,7 @@ export const crearReparacion = async (req, res) => {
       'crear_reparacion',
       'admin',
       req.admin.nombre,
-      `Registró reparación de ${categoria} para vehículo ${vehiculo.placa}`
+      `Registró reparación de ${categoria} para vehículo ${vehiculo.numero_economico}`
     );
 
     res.status(201).json({
@@ -261,7 +261,7 @@ export const actualizarReparacion = async (req, res) => {
       'actualizar_reparacion',
       'admin',
       req.admin.nombre,
-      `Actualizó reparación del vehículo ${reparacion.vehiculo.placa}`
+      `Actualizó reparación del vehículo ${reparacion.vehiculo.numero_economico}`
     );
 
     res.json({
@@ -297,16 +297,15 @@ export const eliminarReparacion = async (req, res) => {
       });
     }
 
-    const placaVehiculo = reparacion.vehiculo.placa; // Guardar antes de eliminar
+    const numeroEconomicoVehiculo = reparacion.vehiculo.numero_economico; // Guardar antes de eliminar
 
     await Reparacion.findByIdAndDelete(id);
 
-    // ⭐ REGISTRAR ACTIVIDAD
     await registrarActividad(
       'eliminar_reparacion',
       'admin',
       req.admin.nombre,
-      `Eliminó reparación del vehículo ${placaVehiculo}`
+      `Eliminó reparación del vehículo ${numeroEconomicoVehiculo}`
     );
 
     res.json({

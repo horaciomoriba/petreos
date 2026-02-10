@@ -210,7 +210,7 @@ export const createVehiculo = async (req, res) => {
       'crear_vehiculo',
       'admin',
       req.admin.nombre,
-      `Creó vehículo ${placa} - ${numero_economico}`
+      `Creó vehículo ${numero_economico} (${placa})`
     );
 
     // Si se asignó operador, actualizar el operador con el vehículo
@@ -317,7 +317,7 @@ export const updateVehiculo = async (req, res) => {
       'actualizar_vehiculo',
       'admin',
       req.admin.nombre,
-      `Actualizó vehículo ${vehiculo.placa} - ${vehiculo.numero_economico}`
+      `Actualizó vehículo ${vehiculo.numero_economico} (${vehiculo.placa})`
     );
 
     await vehiculo.populate('sede_actual', 'nombre');
@@ -379,7 +379,7 @@ export const deleteVehiculo = async (req, res) => {
       'eliminar_vehiculo',
       'admin',
       req.admin.nombre,
-      `Eliminó vehículo ${vehiculo.placa} - ${vehiculo.numero_economico}`
+      `Eliminó vehículo ${vehiculo.numero_economico} (${vehiculo.placa})`
     );
 
     res.json({ 
@@ -422,7 +422,7 @@ export const configurarNeumaticos = async (req, res) => {
       'actualizar_vehiculo',
       'admin',
       req.admin.nombre,
-      `Configuró neumáticos del vehículo ${vehiculo.placa} - ${vehiculo.numero_economico}`
+      `Configuró neumáticos del vehículo ${vehiculo.numero_economico}`
     );
 
     res.json({
@@ -466,7 +466,7 @@ export const actualizarKilometraje = async (req, res) => {
       'actualizar_vehiculo',
       'admin',
       req.admin.nombre,
-      `Actualizó kilometraje del vehículo ${vehiculo.placa} de ${kmAnterior} km a ${kilometraje} km`
+      `Actualizó kilometraje del vehículo ${vehiculo.numero_economico} de ${kmAnterior} km a ${kilometraje} km`
     );
 
     res.json({
@@ -510,7 +510,7 @@ export const actualizarHorasMotor = async (req, res) => {
       'actualizar_vehiculo',
       'admin',
       req.admin.nombre,
-      `Actualizó horas motor del vehículo ${vehiculo.placa} de ${horasAnterior} hrs a ${horas} hrs`
+      `Actualizó horas motor del vehículo ${vehiculo.numero_economico} de ${horasAnterior} hrs a ${horas} hrs`
     );
 
     res.json({
@@ -579,7 +579,7 @@ export const asignarOperador = async (req, res) => {
         'actualizar_vehiculo',
         'admin',
         req.admin.nombre,
-        `Asignó operador ${operadorNombre} al vehículo ${vehiculo.placa}`
+        `Asignó operador ${operadorNombre} al vehículo ${vehiculo.numero_economico}`
       );
     } else {
       // 6. Si operador_id es null, solo desasignar
@@ -591,7 +591,7 @@ export const asignarOperador = async (req, res) => {
         'actualizar_vehiculo',
         'admin',
         req.admin.nombre,
-        `Removió operador del vehículo ${vehiculo.placa}`
+        `Removió operador del vehículo ${vehiculo.numero_economico}`
       );
     }
 
@@ -655,7 +655,7 @@ export const cambiarDisponibilidad = async (req, res) => {
       'actualizar_vehiculo',
       'admin',
       req.admin.nombre,
-      `Cambió disponibilidad del vehículo ${vehiculo.placa} de "${estadoAnterior}" a "${disponibilidad}"`
+      `Cambió disponibilidad del vehículo ${vehiculo.numero_economico} de "${estadoAnterior}" a "${disponibilidad}"`
     );
 
     res.json({
