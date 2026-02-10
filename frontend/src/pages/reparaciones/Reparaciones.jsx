@@ -239,7 +239,8 @@ const Reparaciones = () => {
                   <option value="">Todos los vehículos</option>
                   {vehiculos.map(v => (
                     <option key={v._id} value={v._id}>
-                      {v.numero_economico} - {v.placa}
+                      {/* ⭐ CAMBIO: numero_economico primero en el selector */}
+                      {v.numero_economico} ({v.placa})
                     </option>
                   ))}
                 </select>
@@ -426,13 +427,13 @@ const Reparaciones = () => {
                         onClick={() => navigate(`/reparaciones/${reparacion._id}`)}
                         className="hover:bg-gray-50 transition-colors cursor-pointer"
                       >
-                        {/* Vehículo */}
+                        {/* Vehículo - ⭐ CAMBIO: numero_economico primero */}
                         <td className="px-4 py-3">
                           <div className="text-sm font-semibold text-gray-900">
-                            {reparacion.placa}
+                            {reparacion.numero_economico}
                           </div>
                           <div className="text-xs text-gray-500">
-                            {reparacion.numero_economico}
+                            {reparacion.placa}
                           </div>
                         </td>
 

@@ -320,7 +320,7 @@ const NuevaRevisionOperador = () => {
               <div className="w-px h-6 bg-gray-200 hidden sm:block"></div>
               <div>
                 <h1 className="text-base sm:text-lg font-bold text-gray-900">{tipoRevision.nombre}</h1>
-                <p className="text-xs text-gray-500">{vehiculo.placa}</p>
+                <p className="text-xs text-gray-500">{vehiculo.numero_economico}</p>
               </div>
             </div>
 
