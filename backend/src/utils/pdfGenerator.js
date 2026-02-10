@@ -65,7 +65,7 @@ function drawHeader(doc, pageNumber = 1) {
   doc.fontSize(20)
      .fillColor(COLORS.primary)
      .font('Helvetica-Bold')
-     .text('PETREOS', MARGIN, yPos);
+     .text('FORTYA', MARGIN, yPos);
   
   doc.fontSize(8)
      .fillColor(COLORS.tertiary)

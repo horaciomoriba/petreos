@@ -87,7 +87,7 @@ const DashboardLayout = ({ children }) => {
                     </svg>
                   </div>
                   <div>
-                    <h1 className="text-base font-bold text-primary-900">Petreos</h1>
+                    <h1 className="text-base font-bold text-primary-900">Fortya</h1>
                     <p className="text-xs text-primary-500 font-mono">Gestión Industrial</p>
                   </div>
                 </div>
@@ -241,7 +241,7 @@ const DashboardLayout = ({ children }) => {
                   </svg>
                 </div>
                 <div>
-                  <h1 className="text-base font-bold text-primary-900">Petreos</h1>
+                  <h1 className="text-base font-bold text-primary-900">Fortya</h1>
                   <p className="text-xs text-primary-500 font-mono">Gestión</p>
                 </div>
               </div>

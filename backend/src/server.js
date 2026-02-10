@@ -54,7 +54,7 @@ connectDB();
 // Rutas base
 app.get('/', (req, res) => {
   res.json({ 
-    message: 'API Sistema de Gestión Empresarial - Petreos',
+    message: 'API Sistema de Gestión Empresarial - Fortya',
     version: '1.0.0',
     status: 'active'
   });

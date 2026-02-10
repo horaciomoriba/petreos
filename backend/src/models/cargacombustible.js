@@ -1,4 +1,4 @@
-// petreosbackend/src/models/CargaCombustible.js
+// fortyabackend/src/models/CargaCombustible.js
 
 import mongoose from 'mongoose';
 

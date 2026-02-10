@@ -77,7 +77,7 @@ const LoginUser = () => {
               </svg>
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">PETREOS</h1>
+              <h1 className="text-2xl font-bold text-white">FORTYA</h1>
               <p className="text-sm text-gray-300">Sistema de Gestión de Flota</p>
             </div>
           </div>
@@ -137,7 +137,7 @@ const LoginUser = () => {
         {/* Footer */}
         <div className="relative z-10">
           <div className="flex items-center gap-4 text-sm text-gray-400">
-            <span>© 2026 Petreos</span>
+            <span>© 2026 Fortya</span>
             <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
             <span>v1.0</span>
           </div>
@@ -157,7 +157,7 @@ const LoginUser = () => {
                 </svg>
               </div>
               <div className="text-left">
-                <h1 className="text-2xl font-bold text-gray-900">PETREOS</h1>
+                <h1 className="text-2xl font-bold text-gray-900">FORTYA</h1>
                 <p className="text-xs text-gray-500">Portal de Operadores</p>
               </div>
             </div>
@@ -274,7 +274,7 @@ const LoginUser = () => {
           {/* Mobile Footer */}
           <div className="lg:hidden mt-12 pt-8 border-t border-gray-200">
             <div className="flex items-center justify-center gap-4 text-xs text-gray-400">
-              <span>© 2026 Petreos</span>
+              <span>© 2026 Fortya</span>
               <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
               <span>Sistema de Gestión v1.0</span>
             </div>

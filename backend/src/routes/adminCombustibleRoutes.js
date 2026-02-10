@@ -1,4 +1,4 @@
-// petreosbackend/src/routes/adminCombustibleRoutes.js
+// fortyabackend/src/routes/adminCombustibleRoutes.js
 
 import express from 'express';
 import {

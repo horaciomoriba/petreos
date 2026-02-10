@@ -40,7 +40,7 @@ export const chatService = {
   getWelcomeMessage: () => {
     return {
       role: 'assistant',
-      content: `¡Hola! Soy el asistente de Petreos 🚗
+      content: `¡Hola! Soy el asistente de Fortya 🚗
 
   ¿En qué puedo ayudarte hoy? Puedo darte información sobre:
 
@@ -173,7 +173,7 @@ export const chatService = {
   // Guardar conversación en localStorage (opcional)
   saveConversation: (messages) => {
     try {
-      const key = 'petreos_chat_history';
+      const key = 'fortya_chat_history';
       const data = {
         messages,
         timestamp: new Date().toISOString()
@@ -189,7 +189,7 @@ export const chatService = {
   // Cargar conversación desde localStorage (opcional)
   loadConversation: () => {
     try {
-      const key = 'petreos_chat_history';
+      const key = 'fortya_chat_history';
       const data = localStorage.getItem(key);
       
       if (!data) {
@@ -218,7 +218,7 @@ export const chatService = {
   // Limpiar conversación guardada
   clearSavedConversation: () => {
     try {
-      localStorage.removeItem('petreos_chat_history');
+      localStorage.removeItem('fortya_chat_history');
       return true;
     } catch (error) {
       console.error('Error al limpiar conversación:', error);

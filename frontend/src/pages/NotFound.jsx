@@ -117,7 +117,7 @@ const NotFound = () => {
         {/* Footer */}
         <div className="mt-12">
           <p className="text-xs text-gray-400">
-            Petreos - Sistema de Gestión Industrial v1.0
+            Fortya - Sistema de Gestión Industrial v1.0
           </p>
         </div>
 

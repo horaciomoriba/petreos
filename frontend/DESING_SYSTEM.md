@@ -1,4 +1,4 @@
-# Sistema de Diseño - Petreos Admin
+# Sistema de Diseño - Fortya Admin
 
 ## 🎨 Filosofía de Diseño
 
@@ -239,4 +239,4 @@ import DesignSystemGuide from './pages/DesignSystemGuide';
 
 ---
 
-**Mantenido por el equipo de Petreos** 🏭
+**Mantenido por el equipo de Fortya** 🏭

@@ -1,4 +1,4 @@
-// petreosbackend/src/controllers/adminCombustibleController.js
+// fortyabackend/src/controllers/adminCombustibleController.js
 
 import CargaCombustible from '../models/cargacombustible.js';
 import Vehiculo from '../models/vehiculo.js';

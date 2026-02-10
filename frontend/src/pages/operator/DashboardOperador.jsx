@@ -75,7 +75,7 @@ const DashboardOperador = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
-              <span className="text-sm font-semibold text-gray-900">Petreos</span>
+              <span className="text-sm font-semibold text-gray-900">Fortya</span>
             </div>
 
             <div className="flex items-center gap-2">

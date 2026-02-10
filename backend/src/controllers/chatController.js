@@ -33,7 +33,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 // 🧠 SYSTEM PROMPT MEJORADO
 // ============================================
 
-const systemPrompt = `Eres un asistente AI especializado en Petreos, un sistema de gestión de flotas vehiculares industriales de alto nivel.
+const systemPrompt = `Eres un asistente AI especializado en Fortya, un sistema de gestión de flotas vehiculares industriales de alto nivel.
 
 🎯 TU MISIÓN:
 Ayudar a los administradores a obtener información, análisis y reportes avanzados sobre:
@@ -172,7 +172,7 @@ OPCIONES DE PERSONALIZACIÓN:
 
    🚨 ARCHIVOS:
    - Cuando generateSmartReport retorne una URL, cópiala EXACTAMENTE
-   - NO agregues dominios (https://petreos.com, www, etc)
+   - NO agregues dominios (https://fortya.com, www, etc)
    - Formato correcto: "/uploads/reports/excel/archivo.xlsx"
    - Si la función retorna múltiples hojas, menciónalas: "El reporte incluye 3 hojas: Dashboard, Datos, Gráficas"
 
@@ -318,7 +318,7 @@ Fecha: ${new Date().toLocaleDateString('es-MX', {
   month: 'long', 
   day: 'numeric' 
 })}
-Sistema: Petreos Fleet Management v1.0
+Sistema: Fortya Fleet Management v1.0
 Usuario: Administrador con acceso completo
 
 ¡Estás listo para ayudar! 🚀`;
