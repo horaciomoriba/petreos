@@ -30,6 +30,14 @@ const DetalleVehiculo = () => {
   const [editandoHoras, setEditandoHoras] = useState(false);
   const [nuevoKm, setNuevoKm] = useState('');
   const [nuevasHoras, setNuevasHoras] = useState('');
+  
+  // 🆕 NUEVO - Modal de edición de datos básicos
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [datosEdicion, setDatosEdicion] = useState({
+    placa: '',
+    vin: '',
+    tipo_combustible: ''
+  });
 
   useEffect(() => {
     loadVehiculo();
@@ -44,6 +52,12 @@ const DetalleVehiculo = () => {
       setVehiculo(data);
       setNuevoKm(data.kilometraje_actual || 0);
       setNuevasHoras(data.horas_motor_actual || 0);
+      // 🆕 NUEVO - Inicializar datos de edición
+      setDatosEdicion({
+        placa: data.placa || '',
+        vin: data.vin || '',
+        tipo_combustible: data.tipo_combustible || 'diesel'
+      });
     } catch (error) {
       showToast.error(error.response?.data?.message || 'Error al cargar vehículo');
       navigate('/vehiculos');
@@ -148,6 +162,29 @@ const DetalleVehiculo = () => {
       loadVehiculo();
     } catch (error) {
       showToast.error(error.response?.data?.message || 'Error al asignar operador');
+    }
+  };
+
+  // 🆕 NUEVO - Actualizar datos básicos (placa, VIN, combustible)
+  const handleActualizarDatosBasicos = async () => {
+    // Validaciones básicas
+    if (!datosEdicion.placa.trim()) {
+      showToast.error('La placa es obligatoria');
+      return;
+    }
+
+    try {
+      await vehiculoService.update(id, {
+        placa: datosEdicion.placa.trim(),
+        vin: datosEdicion.vin.trim() || null,
+        tipo_combustible: datosEdicion.tipo_combustible
+      });
+      
+      showToast.success('Datos actualizados correctamente');
+      setShowEditModal(false);
+      loadVehiculo();
+    } catch (error) {
+      showToast.error(error.response?.data?.message || 'Error al actualizar datos');
     }
   };
 
@@ -264,7 +301,7 @@ const DetalleVehiculo = () => {
           {/* Acciones - Simplificadas */}
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={() => navigate(`/vehiculos/${id}/editar`)}
+              onClick={() => setShowEditModal(true)}
               className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 
                 bg-gray-50 hover:bg-gray-100 rounded-lg transition-all border border-gray-200"
             >
@@ -636,6 +673,106 @@ const DetalleVehiculo = () => {
           <TabCombustible vehiculo={vehiculo} onUpdate={loadVehiculo} />
         )}
       </div>
+
+      {/* Modal de Edición de Datos Básicos */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">Editar datos del vehículo</h3>
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Modifica la placa, VIN o tipo de combustible
+              </p>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 py-5 space-y-4">
+              {/* Placa */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Placa <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={datosEdicion.placa}
+                  onChange={(e) => setDatosEdicion(prev => ({ ...prev, placa: e.target.value }))}
+                  className="w-full px-4 py-3 text-sm border border-gray-200 rounded-lg 
+                    focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent
+                    placeholder:text-gray-400"
+                  placeholder="ABC-123"
+                />
+              </div>
+
+              {/* VIN */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  VIN (Número de Serie)
+                </label>
+                <input
+                  type="text"
+                  value={datosEdicion.vin}
+                  onChange={(e) => setDatosEdicion(prev => ({ ...prev, vin: e.target.value }))}
+                  className="w-full px-4 py-3 text-sm border border-gray-200 rounded-lg 
+                    focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent
+                    placeholder:text-gray-400"
+                  placeholder="1HGBH41JXMN109186"
+                />
+                <p className="text-xs text-gray-500 mt-1.5">Opcional - 17 caracteres alfanuméricos</p>
+              </div>
+
+              {/* Tipo de Combustible */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tipo de combustible <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={datosEdicion.tipo_combustible}
+                  onChange={(e) => setDatosEdicion(prev => ({ ...prev, tipo_combustible: e.target.value }))}
+                  className="w-full px-4 py-3 text-sm border border-gray-200 rounded-lg 
+                    focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                >
+                  <option value="diesel">Diesel</option>
+                  <option value="gasolina">Gasolina</option>
+                  <option value="gas_lp">Gas LP</option>
+                  <option value="electrico">Eléctrico</option>
+                  <option value="hibrido">Híbrido</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-gray-200 flex flex-col-reverse sm:flex-row gap-3">
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="w-full sm:w-auto px-5 py-2.5 text-sm font-medium text-gray-700 
+                  hover:text-gray-900 bg-gray-50 hover:bg-gray-100 rounded-lg transition-all 
+                  border border-gray-200"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleActualizarDatosBasicos}
+                className="w-full sm:w-auto px-5 py-2.5 text-sm font-semibold text-white 
+                  bg-gradient-to-r from-gray-900 to-gray-700 hover:from-gray-800 hover:to-gray-600 
+                  rounded-lg transition-all shadow-sm hover:shadow-md"
+              >
+                Guardar cambios
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de Confirmación */}
       <ConfirmModal

@@ -48,7 +48,7 @@ export async function generateSmartReport(params) {
     const workbook = new ExcelJS.Workbook();
     
     // Configuración del workbook
-    workbook.creator = 'Petreos Fleet Management';
+    workbook.creator = 'Fortya Fleet Management';
     workbook.created = new Date();
     
     // 5. CREAR HOJAS SEGÚN CONFIGURACIÓN
